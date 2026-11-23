@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Devbox in one go</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#080808">
+<meta name="description" content="Pick your languages, clouds and tools in one editable sentence and get a re-runnable setup script for Windows, WSL, Ubuntu or macOS, or a Dockerfile or devcontainer. 108 tools, 23 themes.">
+<link rel="canonical" href="https://devbox.ayazmirza54.in/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d79921'/%3E%3Cpath d='M9 11l5 5-5 5' fill='none' stroke='%230b0b0b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M17 22h7' stroke='%230b0b0b' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="devbox">
+<meta property="og:url" content="https://devbox.ayazmirza54.in/">
+<meta property="og:title" content="Devbox in one go: set up your whole machine in one sentence">
+<meta property="og:description" content="One editable sentence in, one re-runnable setup script out. PowerShell, Git Bash, WSL, Ubuntu, macOS, Dockerfile or devcontainer. 108 tools, 23 themes.">
+<meta property="og:image" content="https://devbox.ayazmirza54.in/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="devbox: Set up your whole machine in one sentence. 108 tools, 23 themes.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Devbox in one go: set up your whole machine in one sentence">
+<meta name="twitter:description" content="One editable sentence in, one re-runnable setup script out. 108 tools, 23 themes.">
+<meta name="twitter:image" content="https://devbox.ayazmirza54.in/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+/* LAYOUT: an editor window. Sticky tab bar on top, a sentence you edit by tapping words,
+   editor-style output tabs with a line gutter, and a vim statusline pinned to the bottom.
+   COLOUR: every token below is rewritten at runtime from the chosen theme (23 palettes,
+   16 inspired by rune.build). These defaults are Ritchie (light) and Carmack (dark). */
+:root{
+  --bg:#f8f8f8;--fg:#2b2b2b;--ac:#2f5af3;--on-ac:#ffffff;
+  --s1:#efefef;--s2:#e7e7e7;--s3:#dddddd;--line:#d4d4d4;--muted:#717171;--cm:#8f8f8f;--sel:#cad5fb;
+  --red:#c8303a;--green:#2e8a3a;--yellow:#a87a00;--blue:#2f5af3;--magenta:#9a3aa8;--cyan:#1a8a9a;
+  --mono:'JetBrains Mono','JetBrainsMono Nerd Font',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --r:6px;--ease:cubic-bezier(.2,0,0,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#080808;--fg:#d5c4a1;--ac:#d79921;--on-ac:#0b0b0b;
+  --s1:#121110;--s2:#1b1a17;--s3:#252320;--line:#2d2b26;--muted:#87806f;--cm:#b8892a;--sel:#46340f;
+  --red:#cc241d;--green:#98971a;--yellow:#d79921;--blue:#458588;--magenta:#b16286;--cyan:#689d6a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#080808;--fg:#d5c4a1;--ac:#d79921;--on-ac:#0b0b0b;
+  --s1:#121110;--s2:#1b1a17;--s3:#252320;--line:#2d2b26;--muted:#87806f;--cm:#b8892a;--sel:#46340f;
+  --red:#cc241d;--green:#98971a;--yellow:#d79921;--blue:#458588;--magenta:#b16286;--cyan:#689d6a;
+  color-scheme:dark}
+
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 var(--mono);font-variant-ligatures:contextual;overflow-x:clip;transition:background .25s var(--ease),color .25s var(--ease)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input{font-family:inherit}
+::selection{background:var(--sel);color:var(--fg)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+kbd{font:600 11px var(--mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--muted);background:var(--s1)}
+
+/* top bar: looks like an editor's tab strip */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;display:flex;align-items:stretch;gap:0;height:46px;background:var(--s1);border-bottom:1px solid var(--line);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:10px;padding-right:16px;font-weight:800;font-size:15px;letter-spacing:-.02em}
+.brand .mk{display:grid;place-items:center;width:26px;height:26px;border-radius:6px;background:var(--ac);color:var(--on-ac);font-size:12px;font-weight:800}
+.ftab{display:flex;align-items:center;gap:8px;padding:0 14px;background:var(--bg);border-left:1px solid var(--line);border-right:1px solid var(--line);box-shadow:inset 0 2px 0 var(--ac);font-size:13px;color:var(--fg);margin-bottom:-1px;white-space:nowrap}
+.ftab::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ac)}
+.top .sp{flex:1}
+.tbtn{display:inline-flex;align-items:center;gap:8px;align-self:center;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg);font-size:13px;cursor:pointer;margin-left:8px;white-space:nowrap}
+.tbtn:hover{border-color:var(--ac)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ac);flex:none;box-shadow:0 0 0 1px color-mix(in srgb,var(--fg) 25%,transparent)}
+@media(max-width:620px){.ftab{display:none}.tbtn .bl{display:none}}
+
+main{max-width:960px;margin:0 auto;padding-block:8px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* hero */
+.hero{padding:clamp(24px,5vw,56px) 0 clamp(20px,3vw,32px)}
+.eyebrow{margin:0 0 14px;color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.eyebrow b{color:var(--ac);font-weight:600}
+h1{font-size:clamp(30px,5.4vw,54px);line-height:1.06;font-weight:800;letter-spacing:-.045em;margin:0;text-wrap:balance;max-width:18ch}
+h1 em{font-style:normal;color:var(--ac)}
+.lead{margin:18px 0 0;max-width:64ch;color:var(--muted);font-size:15px;text-wrap:pretty}
+.lead strong{color:var(--fg);font-weight:600}
+.cycle{display:inline-flex;align-items:center;gap:7px;font:inherit;color:var(--fg);background:var(--s2);border:1px solid var(--line);border-radius:999px;padding:1px 11px 1px 7px;cursor:pointer;vertical-align:baseline}
+.cycle:hover{border-color:var(--ac)}
+.say{display:flex;gap:10px;margin:22px 0 0;padding:12px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--s1);font-size:13.5px;min-height:48px;max-width:72ch}
+.say b{color:var(--ac);flex:none}
+.say span::after{content:"";display:inline-block;width:8px;height:1.15em;margin-left:2px;vertical-align:-.22em;background:var(--ac);animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+.lbl-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;flex-wrap:wrap}
+.lbl{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin:0}
+.hint{font-size:12px;color:var(--muted)}
+@media(hover:none),(max-width:620px){.hint{display:none}}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px}
+.chip{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:0 13px;height:34px;cursor:pointer;transition:border-color .15s,background .15s}
+.chip:hover{border-color:var(--ac)}
+.chip[aria-pressed=true]{background:var(--ac);color:var(--on-ac);border-color:var(--ac)}
+.chip small{opacity:.7;font-size:11px}
+
+/* the sentence */
+.card{border:1px solid var(--line);border-radius:10px;background:var(--s1);overflow:hidden}
+.card-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);background:var(--s2)}
+.card-h b{color:var(--fg);font-weight:500}
+#sentence{padding:clamp(14px,3vw,28px)}
+.sent{font-size:clamp(15.5px,2.05vw,19px);line-height:2.25;color:var(--muted);margin:0;text-wrap:pretty}
+.sent+.sent{margin-top:2px}
+.tok{display:inline-flex;align-items:center;gap:7px;font:500 .8em/1 var(--mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 10px;margin:2px 0;cursor:pointer;vertical-align:.12em;text-align:start;transition:border-color .15s,background .15s}
+.tok:hover{border-color:var(--ac);background:var(--s2)}
+.tok.unset{background:transparent;border-style:dashed;color:var(--muted)}
+.tok.fixed{cursor:default;background:transparent;border-style:dotted}
+.tok.fixed:hover{border-color:var(--line);background:transparent}
+.tok .ic{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:4px;background:var(--ac);color:var(--on-ac);font-size:10.5px;font-weight:800}
+.tok .n{color:var(--muted);font-size:.9em}
+
+.actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:20px 0 0}
+.run{display:inline-flex;align-items:center;gap:10px;font-size:15px;font-weight:700;background:var(--ac);color:var(--on-ac);border:0;border-radius:var(--r);height:48px;padding:0 20px 0 16px;cursor:pointer;transition:filter .15s,transform .15s}
+.run:hover{filter:brightness(1.08)}
+.run:active{transform:translateY(1px)}
+.run svg{width:20px;height:20px;fill:currentColor}
+.run kbd{background:transparent;color:inherit;border-color:color-mix(in srgb,var(--on-ac) 45%,transparent);opacity:.8}
+.stats{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats b{color:var(--fg);font-weight:600}
+.stats .warnc{color:var(--yellow)}
+
+/* output */
+#out{margin-top:30px;scroll-margin-top:calc(60px + env(safe-area-inset-top,0px))}
+.tabs{display:flex;overflow-x:auto;background:var(--s2);border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tab{position:relative;font:500 13px var(--mono);background:none;border:0;border-right:1px solid var(--line);color:var(--muted);padding:0 16px;height:40px;cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected=true]{color:var(--fg);background:var(--bg);box-shadow:inset 0 2px 0 var(--ac)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line);background:var(--bg)}
+.bar .btns{display:flex;gap:8px}
+.btn{font:600 12.5px var(--mono);background:var(--s2);color:var(--fg);border:1px solid var(--line);border-radius:var(--r);height:32px;padding:0 14px;cursor:pointer}
+.btn:hover{border-color:var(--ac)}
+.btn.pri{background:var(--ac);color:var(--on-ac);border-color:var(--ac)}
+.code{background:var(--bg);max-height:64vh;overflow:auto;font:12.5px/1.65 var(--mono);color:var(--fg);counter-reset:ln}
+.code pre{margin:0;padding:12px 0;white-space:pre;font:inherit;min-width:max-content}
+.code .l{display:block;padding:0 18px 0 0}
+.code .l::before{counter-increment:ln;content:counter(ln);display:inline-block;width:4.2em;padding-right:1.4em;text-align:right;color:var(--muted);opacity:.55;user-select:none;-webkit-user-select:none}
+.code .l:hover{background:var(--s1)}
+.hc{color:var(--cm);font-style:italic}.hs{color:var(--green)}.hv{color:var(--cyan)}.hk{color:var(--magenta)}.hf{color:var(--ac);font-weight:600}.hn{color:var(--yellow)}
+.how{margin:0;padding:12px 14px;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+.how code,.warn code{font:12.5px var(--mono);color:var(--fg);background:var(--s3);border-radius:4px;padding:1px 6px;overflow-wrap:anywhere}
+.warn{margin:0;padding:12px 14px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--yellow) 12%,var(--s1));color:var(--fg);font-size:13px}
+.warn:empty{display:none}
+.note{font-size:12.5px;color:var(--muted);margin:26px 2px 0;max-width:80ch}
+.note a{color:var(--ac)}
+
+/* statusline */
+.status{position:fixed;left:0;right:0;bottom:0;z-index:7;display:flex;align-items:stretch;gap:0;font-size:12px;background:var(--s2);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:max(10px,env(safe-area-inset-right,0px));height:calc(28px + env(safe-area-inset-bottom,0px));font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+.status>span{display:flex;align-items:center;padding:0 12px;gap:6px;color:var(--muted)}
+.status .mode{background:var(--ac);color:var(--on-ac);font-weight:800;letter-spacing:.04em}
+.status .sep{border-left:1px solid var(--line)}
+.status b{color:var(--fg);font-weight:600}
+.status .sp{flex:1;padding:0}
+.status button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;display:flex;align-items:center;gap:6px;padding:0}
+@media(max-width:620px){.status .hide-s{display:none}}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:color-mix(in srgb,#000 45%,transparent);display:none;z-index:20;align-items:flex-end;justify-content:center}
+.scrim.on{display:flex}
+.sheet{background:var(--s1);color:var(--fg);border:1px solid var(--line);width:min(640px,100%);max-height:86vh;display:flex;flex-direction:column;border-radius:12px 12px 0 0;animation:up .3s var(--ease);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet.wide{width:min(980px,100%)}
+@media(min-width:700px){.scrim{align-items:center;padding:24px}.sheet{border-radius:12px}}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 10px 6px 20px;font-size:17px;font-weight:700}
+.sh small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+.sq{padding:4px 16px 8px}
+.sq input,.pal input{width:100%;font:14px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:var(--r);padding:0 12px;height:40px}
+.sq input:focus,.pal input:focus{outline:none;border-color:var(--ac)}
+.opts{overflow:auto;padding:2px 8px 8px;overscroll-behavior:contain}
+.opt{display:flex;gap:14px;align-items:center;width:100%;text-align:start;background:none;border:0;color:var(--fg);padding:9px 12px;border-radius:8px;cursor:pointer;font-size:14.5px;min-height:52px}
+.opt:hover{background:var(--s2)}
+.opt>span:nth-child(2){flex:1}
+.opt small{display:block;color:var(--muted);font-size:12.5px;line-height:1.45}
+.opt small.na{color:var(--yellow)}
+.box{flex:none;width:18px;height:18px;border:2px solid var(--muted);border-radius:4px;display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--on-ac)}
+.opt[aria-checked=true] .box{background:var(--ac);border-color:var(--ac)}
+.radio .box{border-radius:50%}
+.radio .opt[aria-checked=true] .box{background:none;color:transparent;box-shadow:inset 0 0 0 4px var(--s1),inset 0 0 0 10px var(--ac)}
+.plat{display:flex;gap:3px;flex:none}
+.plat i{font:600 10px/1 var(--mono);font-style:normal;width:17px;height:17px;display:grid;place-items:center;border-radius:3px;border:1px solid var(--line);color:var(--muted);opacity:.45}
+.plat i.on{opacity:1;color:var(--fg);background:var(--s3)}
+.sf{padding:10px 16px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line)}
+.sf:empty{display:none}
+.sf input{flex:1 1 220px;font:15px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;height:46px}
+.sf input:focus{outline:none;border-color:var(--ac)}
+.sf .grow{flex:1}
+.x{background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer;width:40px;height:40px;border-radius:8px;flex:none}
+.x:hover{background:var(--s2);color:var(--fg)}
+.empty{padding:20px;color:var(--muted);font-size:13px;text-align:center}
+
+/* theme gallery */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,40vw),1fr));gap:10px;padding:4px 8px 12px}
+.tsec{grid-column:1/-1;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 2px 0}
+.tcard{display:flex;flex-direction:column;text-align:start;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg);color:var(--fg);cursor:pointer;transition:border-color .15s,transform .15s}
+.tcard:hover{border-color:var(--muted);transform:translateY(-1px)}
+.tcard[aria-checked=true]{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
+.tprev{display:flex;flex-direction:column;gap:1px;padding:10px 10px 0;font:11px/1.55 var(--mono);height:100px;overflow:hidden;position:relative}
+.tprev .tsl{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;font-size:9.5px;height:18px}
+.tprev .tsl b{padding:0 6px;height:100%;display:flex;align-items:center;font-weight:800}
+.tprev .tsl i{font-style:normal}
+.tname{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:13px;font-weight:600;border-top:1px solid var(--line)}
+.tname small{margin-left:auto;font-weight:400;color:var(--muted);font-size:11px}
+
+/* command palette */
+.pal{position:fixed;inset:0;z-index:30;display:none;justify-content:center;align-items:flex-start;padding:12vh 16px 16px;background:color-mix(in srgb,#000 45%,transparent)}
+.pal.on{display:flex}
+.palbox{width:min(640px,100%);background:var(--s1);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;max-height:72vh;animation:up .2s var(--ease)}
+.palbox .pin{padding:12px;border-bottom:1px solid var(--line)}
+.palbox input{height:44px;font-size:15px}
+#palList{overflow:auto;padding:6px}
+.pi{display:flex;align-items:center;gap:12px;width:100%;text-align:start;background:none;border:0;color:var(--fg);padding:8px 10px;border-radius:7px;cursor:pointer;font-size:14px}
+.pi[aria-selected=true]{background:var(--s3)}
+.pi .k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);width:58px;flex:none}
+.pi .t{flex:1}
+.pi .t small{color:var(--muted);margin-left:8px;font-size:12px}
+.pi .st{font-size:11px;color:var(--muted)}
+.pi .st.on{color:var(--ac);font-weight:700}
+.palfoot{display:flex;gap:14px;padding:8px 12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <div class="brand"><span class="mk" aria-hidden="true">&gt;_</span>devbox</div>
+  <div class="ftab" id="fname">setup.ps1</div>
+  <span class="sp"></span>
+  <button class="tbtn" id="themeBtn" aria-label="Choose theme"><span class="dot" id="themeDot"></span><span class="bl" id="themeLbl">Carmack</span></button>
+  <button class="tbtn" id="kBtn" aria-label="Open command palette"><span class="bl">Search tools</span><kbd id="kKey">⌘K</kbd></button>
+</header>
+<main>
+  <section class="hero">
+    <p class="eyebrow"><b>~/devbox</b> · bootstrap generator for Windows, WSL, Ubuntu &amp; macOS</p>
+    <h1>Set up your whole machine in <em>one sentence</em>.</h1>
+    <p class="lead">Tap the highlighted words to pick your languages, clouds and tools. You get one script that is safe to re-run, or a Dockerfile, or a devcontainer. <button class="cycle" id="cycle" title="Next theme"><span class="dot" id="cycleDot"></span><span id="cycleN">23 themes</span></button> carry through to your prompt, terminal and editor.</p>
+    <p class="say" aria-live="polite"><b>❯</b><span id="say"></span></p>
+  </section>
+
+  <div class="lbl-row"><p class="lbl">Start from a preset</p><span class="hint">or press <kbd id="kKey2">⌘K</kbd> to search all tools</span></div>
+  <div class="chips" id="presets"></div>
+
+  <div class="card">
+    <div class="card-h"><b>sentence.txt</b><span>tap a highlighted word to change it</span></div>
+    <div id="sentence"></div>
+  </div>
+
+  <div class="actions">
+    <button class="run" id="run"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Generate setup<kbd>⌘⏎</kbd></button>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <section id="out" class="card" hidden aria-live="polite">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="bar"><span id="meta"></span><span class="btns"><button class="btn" id="dl" hidden>Download</button><button class="btn pri" id="copy">Copy</button></span></div>
+    <div class="code" id="codeWrap"><pre id="code"></pre></div>
+    <p class="how" id="how"></p>
+    <div class="warn" id="warn"></div>
+  </section>
+
+  <p class="note">Every step checks before it installs, so re-run the script whenever you add something. Proprietary or invite-only tools (Ab Initio GDE, Rune, Hex, Agentes) can't be scripted, so they're left out. The Rune theme set is inspired by the sixteen built-in themes of <a href="https://rune.build" target="_blank" rel="noopener">rune.build</a>; the colours are sampled from its screenshots, not official values. Your picks are remembered in this browser.</p>
+</main>
+
+<footer class="status" id="status"></footer>
+
+<div class="scrim" id="scrim"><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+  <div class="sh"><span id="shTitle"></span><button class="x" id="shX" aria-label="Close">×</button></div>
+  <div class="sq" id="shSearch" hidden><input id="shQ" autocomplete="off" spellcheck="false" placeholder="Filter…"></div>
+  <div class="opts" id="shOpts"></div>
+  <div class="sf" id="shFoot"></div>
+</div></div>
+
+<div class="pal" id="pal"><div class="palbox" role="dialog" aria-modal="true" aria-label="Command palette">
+  <div class="pin"><input id="palQ" autocomplete="off" spellcheck="false" placeholder="Search tools, themes, presets, actions…" role="combobox" aria-controls="palList" aria-expanded="true"></div>
+  <div id="palList" role="listbox"></div>
+  <div class="palfoot"><span><kbd>↑</kbd> <kbd>↓</kbd> move</span><span><kbd>⏎</kbd> toggle / run</span><span><kbd>esc</kbd> close</span></div>
+</div></div>
+
+<script>
+{
+/* ================= themes ================= */
+// a: ANSI normal colours [black, red, green, yellow, blue, magenta, cyan, white]
+const THEMES = [
+ {id:'romero',n:'Romero',src:'rune',dark:true,bg:'#000000',fg:'#c9c9d1',ac:'#d42a46',sw:'#BA0E2E',a:['#1c1c22','#d42a46','#7f9f7f','#c9a66b','#6f7f9f','#a35d7a','#6f9a9f','#9a9aa6'],d:'crimson on pure black'},
+ {id:'carmack',n:'Carmack',src:'rune',dark:true,bg:'#080808',fg:'#d5c4a1',ac:'#d79921',sw:'#D79921',cm:'#b8892a',a:['#1d1d1b','#cc241d','#98971a','#d79921','#458588','#b16286','#689d6a','#a89984'],d:'amber and cream, gruvbox at night'},
+ {id:'frost',n:'Frost',src:'rune',dark:true,bg:'#000000',fg:'#c8c6d6',ac:'#d7afff',sw:'#D7AFFF',a:['#1a1a22','#e06c8a','#8fbf9f','#e0c08a','#8fa8e0','#b47ae6','#8fd0e0','#a09cb4'],d:'lavender frost'},
+ {id:'wozniak',n:'Wozniak',src:'rune',dark:true,bg:'#110f1e',fg:'#c4c1dc',ac:'#7b62ff',sw:'#6346FF',a:['#1e1b30','#ff5c7a','#5fd7a7','#ffcf6b','#6a8cff','#a78bfa','#5fc8e6','#9894b8'],d:'electric indigo on ink'},
+ {id:'brevik',n:'Brevik',src:'rune',dark:true,bg:'#080808',fg:'#b9b4b0',ac:'#9b30ff',sw:'#8700FF',a:['#1a1717','#cc2418','#7a8a4a','#c8962e','#5a6aa8','#8f3fd8','#5a9a9a','#8f8a86'],d:'violet and blood red'},
+ {id:'sanfilippo',n:'Sanfilippo',src:'rune',dark:true,bg:'#000000',fg:'#cfcfcf',ac:'#c1e3fe',sw:'#C1E3FE',a:['#1a1a1a','#fca59a','#a8d8b0','#f4dca0','#9cc8f0','#e0b4f0','#a8e4f0','#9c9c9c'],d:'pastels on black'},
+ {id:'kernighan',n:'Kernighan',src:'rune',dark:true,bg:'#0c0c0c',fg:'#cccccc',ac:'#3b78ff',sw:'#3B78FF',a:['#0c0c0c','#c50f1f','#13a10e','#c19c00','#0037da','#881798','#3a96dd','#cccccc'],d:'classic console blue'},
+ {id:'kelleher',n:'Kelleher',src:'rune',dark:true,bg:'#000000',fg:'#c0c0c0',ac:'#9d65ff',sw:'#9D65FF',a:['#1a1a1a','#ff5f87','#87d787','#ffd787','#87afff','#9d65ff','#87d7d7','#a8a8a8'],d:'soft purple'},
+ {id:'thompson',n:'Thompson',src:'rune',dark:true,bg:'#0f1014',fg:'#bfc4cc',ac:'#5a9ac0',sw:'#508AAA',a:['#1c1e24','#c4304a','#7fa88a','#c8a86a','#508aaa','#9a7aa8','#5aa8a8','#8a9098'],d:'steel blue slate'},
+ {id:'hopper',n:'Hopper',src:'rune',dark:true,bg:'#000000',fg:'#bdbdbd',ac:'#e4e4e4',sw:'#454545',a:['#1a1a1a','#e46060','#60c060','#f0cc3c','#7a9ad8','#c07ac0','#60c0c0','#a8a8a8'],d:'monochrome mainframe'},
+ {id:'ritchie',n:'Ritchie',src:'rune',dark:false,bg:'#f8f8f8',fg:'#2b2b2b',ac:'#2f5af3',sw:'#2F5AF3',a:['#2b2b2b','#c8303a','#2e8a3a','#a87a00','#2f5af3','#9a3aa8','#1a8a9a','#c6c6c6'],d:'clean paper, ink blue'},
+ {id:'auge',n:'Auge',src:'rune',dark:true,bg:'#270d06',fg:'#e0cdb4',ac:'#ffcc33',sw:'#FFCC33',a:['#3a1a10','#fc3000','#9c9c3a','#ffcc33','#7a8aa0','#c0607a','#7aa89a','#b4a090'],d:'gold on burnt umber'},
+ {id:'reynolds',n:'Reynolds',src:'rune',dark:true,bg:'#111111',fg:'#c4bfa4',ac:'#32cd32',sw:'#32CD32',a:['#1e1e1a','#d0603a','#32cd32','#d4c060','#5a8ac0','#a87aa8','#5ab4a0','#9c9078'],d:'lime green, khaki text'},
+ {id:'mullen',n:'Mullen',src:'rune',dark:true,bg:'#0e0e1b',fg:'#c2c2d4',ac:'#a985c4',sw:'#9A77B1',a:['#1c1c2c','#c04854','#7aa88a','#d4b070','#6a7ab8','#9a77b1','#6aaab8','#8a8aa0'],d:'muted plum on navy'},
+ {id:'pike',n:'Pike',src:'rune',dark:false,bg:'#ffffea',fg:'#1f1f1f',ac:'#003366',sw:'#003366',a:['#1f1f1f','#a0402a','#3a7a3a','#8a7a1a','#003366','#7a3a7a','#2a7a8a','#c8c8b4'],d:'Acme yellow, Plan 9 calm'},
+ {id:'furman',n:'Furman',src:'rune',dark:true,bg:'#1f1f1f',fg:'#c4c4c4',ac:'#b8b8b8',sw:'#808080',a:['#2a2a2a','#c45a4c','#8aa87a','#c89a50','#7a8aaa','#a07aa0','#7aaaa8','#9a9a9a'],d:'graphite greys'},
+ {id:'phosphor',n:'Green phosphor',src:'classic',dark:true,bg:'#030803',fg:'#33ff66',ac:'#33ff66',sw:'#33FF66',cm:'#1c9a43',a:['#0a1a0a','#ffb000','#33ff66','#ffb000','#1c9a43','#8dffa8','#5cff85','#1c9a43'],d:'VT220 glow'},
+ {id:'onedark',n:'One Dark Pro',src:'classic',dark:true,bg:'#282c34',fg:'#abb2bf',ac:'#61afef',sw:'#61AFEF',cm:'#7f848e',a:['#3f4451','#e06c75','#98c379','#e5c07b','#61afef','#c678dd','#56b6c2','#abb2bf'],vs:{ext:'zhuangtongfa.material-theme',name:'One Dark Pro'},d:'Atom’s finest'},
+ {id:'catppuccin',n:'Catppuccin Mocha',src:'classic',dark:true,bg:'#1e1e2e',fg:'#cdd6f4',ac:'#cba6f7',sw:'#CBA6F7',cm:'#7f849c',a:['#45475a','#f38ba8','#a6e3a1','#f9e2af','#89b4fa','#f5c2e7','#94e2d5','#bac2de'],vs:{ext:'Catppuccin.catppuccin-vsc',name:'Catppuccin Mocha'},d:'soothing pastel'},
+ {id:'tokyonight',n:'Tokyo Night',src:'classic',dark:true,bg:'#1a1b26',fg:'#c0caf5',ac:'#7aa2f7',sw:'#7AA2F7',cm:'#565f89',a:['#15161e','#f7768e','#9ece6a','#e0af68','#7aa2f7','#bb9af7','#7dcfff','#a9b1d6'],vs:{ext:'enkia.tokyo-night',name:'Tokyo Night'},d:'neon city lights'},
+ {id:'dracula',n:'Dracula',src:'classic',dark:true,bg:'#282a36',fg:'#f8f8f2',ac:'#bd93f9',sw:'#BD93F9',cm:'#6272a4',a:['#21222c','#ff5555','#50fa7b','#f1fa8c','#bd93f9','#ff79c6','#8be9fd','#f8f8f2'],d:'the vampire classic'},
+ {id:'nord',n:'Nord',src:'classic',dark:true,bg:'#2e3440',fg:'#d8dee9',ac:'#88c0d0',sw:'#88C0D0',cm:'#616e88',a:['#3b4252','#bf616a','#a3be8c','#ebcb8b','#81a1c1','#b48ead','#88c0d0','#e5e9f0'],vs:{ext:'arcticicestudio.nord-visual-studio-code',name:'Nord'},d:'arctic, north-bluish'},
+ {id:'rosepine',n:'Rosé Pine Dawn',src:'classic',dark:false,bg:'#faf4ed',fg:'#575279',ac:'#907aa9',sw:'#907AA9',cm:'#9893a5',a:['#f2e9e1','#b4637a','#286983','#ea9d34','#56949f','#907aa9','#d7827e','#575279'],vs:{ext:'mvllow.rose-pine',name:'Rosé Pine Dawn'},d:'warm morning light'},
+];
+const TBY = Object.fromEntries(THEMES.map(t=>[t.id,t]));
+const h2r = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const r2h = c => '#'+c.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
+const mix = (a,b,t) => { const x=h2r(a), y=h2r(b); return r2h(x.map((v,i)=>v+(y[i]-v)*t)); };
+const lum = h => { const [r,g,b]=h2r(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)}); return .2126*r+.7152*g+.0722*b; };
+function full(t){
+  const b=t.bg, f=t.fg, d=t.dark;
+  const br=t.a.map((c,i)=> i===0 ? mix(b,f,.42) : i===7 ? (d?mix(f,'#ffffff',.35):mix(t.a[7],'#ffffff',.4)) : mix(c,d?'#ffffff':'#000000',d?.22:.18));
+  return {...t, s1:mix(b,f,d?.045:.035), s2:mix(b,f,d?.085:.065), s3:mix(b,f,d?.13:.1), line:mix(b,f,d?.17:.15), muted:mix(b,f,d?.58:.62),
+    comment:t.cm||mix(b,f,.48), onAc:lum(t.ac)>.36?'#0b0b0b':'#ffffff', sel:mix(b,t.ac,d?.3:.22), br};
+}
+function sysDark(){
+  const dt=document.documentElement.getAttribute('data-theme');
+  if(dt==='dark')return true; if(dt==='light')return false;
+  try{return matchMedia('(prefers-color-scheme: dark)').matches}catch(e){return true}
+}
+const T = () => S.theme==='system' ? TBY[sysDark()?'carmack':'ritchie'] : (TBY[S.theme]||TBY.carmack);
+
+/* ================= catalog ================= */
+const R = String.raw;
+const UV_LIN = R`if has uv; then skip uv; else curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh >/dev/null; ok uv; fi`;
+const SQLCL_SH = R`if has sql || [ -x "$HOME/.local/opt/sqlcl/bin/sql" ]; then skip sqlcl; else
+  curl -fsSL https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip -o /tmp/sqlcl.zip
+  mkdir -p "$HOME/.local/opt" && unzip -qo /tmp/sqlcl.zip -d "$HOME/.local/opt" && rm /tmp/sqlcl.zip
+  ok "Oracle SQLcl (run: sql)"
+fi
+export PATH="$PATH:$HOME/.local/opt/sqlcl/bin"
+addrc 'export PATH="$PATH:$HOME/.local/opt/sqlcl/bin"'`;
+const NODE_GB = R`if has fnm; then
+  eval "$(fnm env --shell bash)"
+  fnm install --lts && fnm default lts-latest && eval "$(fnm env --shell bash)"
+  ok "node $(node -v)"
+else note "fnm not on PATH yet - open a new terminal and re-run"; fi`;
+const BUN_SH = R`if has bun || [ -x "$HOME/.bun/bin/bun" ]; then skip bun; else curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1; ok bun; fi
+addrc 'export PATH="$HOME/.bun/bin:$PATH"'`;
+const DENO_SH = R`if has deno || [ -x "$HOME/.deno/bin/deno" ]; then skip deno; else curl -fsSL https://deno.land/install.sh | sh -s -- -y >/dev/null 2>&1; ok deno; fi
+addrc 'export PATH="$HOME/.deno/bin:$PATH"'`;
+const FLY_SH = R`if has flyctl || [ -x "$HOME/.fly/bin/flyctl" ]; then skip flyctl; else curl -fsSL https://fly.io/install.sh | sh >/dev/null 2>&1; ok flyctl; fi
+addrc 'export PATH="$HOME/.fly/bin:$PATH"'`;
+const PS_GB = cmd => 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "'+cmd+'"';
+const INIT = (zsh, fish, ps) => ({zsh:zsh.replace('SH','zsh'), bash:zsh.replace('SH','bash'), fish, ps});
+
+// fam: lin = Ubuntu/WSL, mac = macOS, win = Windows (PowerShell + Git Bash share winget ids)
+const I = [
+ // ---------- languages
+ {id:'python',g:'langs',l:'Python',d:'uv + Python 3.12, ruff, ipython',w:[2,.4],
+  lin:UV_LIN+'\nuv python install 3.12', brew:'uv', mac:'uv python install 3.12', wg:'astral-sh.uv', win:'uv python install 3.12', gb:'uv python install 3.12', uv:['ruff','ipython']},
+ {id:'node',g:'langs',l:'Node.js',d:'fnm + latest LTS, pnpm',w:[2,.3],npm:['pnpm'],
+  lin:R`if ! has fnm; then curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.local/share/fnm" --skip-shell >/dev/null; fi
+export PATH="$HOME/.local/share/fnm:$PATH"; eval "$(fnm env)"
+fnm install --lts && fnm default lts-latest && eval "$(fnm env)"
+ok "node $(node -v)"`,
+  brew:'fnm', mac:R`eval "$(fnm env)"; fnm install --lts && fnm default lts-latest && eval "$(fnm env)"
+ok "node $(node -v)"`,
+  wg:'Schniz.fnm',
+  win:'if (Has fnm) {\n  fnm env --shell powershell | Out-String | Invoke-Expression\n  fnm install --lts; fnm default lts-latest\n  fnm env --shell powershell | Out-String | Invoke-Expression\n  Ok "node $(node -v)"\n} else { Note \'fnm not on PATH yet - open a new terminal and re-run\' }',
+  gb:NODE_GB},
+ {id:'bun',g:'langs',l:'Bun',d:'fast JS runtime, bundler, test runner',w:[.3,.1],lin:BUN_SH,brew:'oven-sh/bun/bun',wg:'Oven-sh.Bun'},
+ {id:'deno',g:'langs',l:'Deno',d:'secure TS runtime',w:[.3,.1],lin:DENO_SH,brew:'deno',wg:'DenoLand.Deno'},
+ {id:'java',g:'langs',l:'Java 21',d:'OpenJDK - Spark, JDBC, SQLcl',w:[2,.4],
+  lin:`if has java; then skip java; else $SUDO apt-get install -y -qq openjdk-21-jdk-headless || $SUDO apt-get install -y -qq default-jdk-headless; ok "Java"; fi`,
+  brew:'openjdk@21', mac:'addrc "export PATH=\\"$(brew --prefix openjdk@21)/bin:\\$PATH\\""\nexport PATH="$(brew --prefix openjdk@21)/bin:$PATH"', wg:'Microsoft.OpenJDK.21'},
+ {id:'go',g:'langs',l:'Go',d:'latest stable',w:[1,.5],
+  lin:R`if has go || [ -x /usr/local/go/bin/go ]; then skip go; else
+  GO_VER="$(curl -fsSL 'https://go.dev/VERSION?m=text' | head -n1)"
+  curl -fsSL "https://go.dev/dl/$GO_VER.linux-$ARCH.tar.gz" | $SUDO tar -C /usr/local -xz
+  ok "$GO_VER"
+fi
+export PATH="$PATH:/usr/local/go/bin"; addrc 'export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin"'`,
+  brew:'go', wg:'GoLang.Go'},
+ {id:'rust',g:'langs',l:'Rust',d:'rustup stable',w:[3,1.2],
+  lin:R`if has rustup; then skip rustup; else curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path >/dev/null; ok "rustup stable"; fi
+addrc '. "$HOME/.cargo/env"'`,
+  mac:R`if has rustup; then skip rustup; else curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path >/dev/null; ok "rustup stable"; fi
+addrc '. "$HOME/.cargo/env"'`,
+  wg:'Rustlang.Rustup', winNote:'Rust on Windows also needs the MSVC build tools: winget install Microsoft.VisualStudio.2022.BuildTools'},
+ {id:'dotnet',g:'langs',l:'.NET SDK',d:'current LTS',w:[2,.8],
+  lin:R`if has dotnet || [ -x "$HOME/.dotnet/dotnet" ]; then skip dotnet; else curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel LTS >/dev/null; ok ".NET SDK (LTS)"; fi
+addrc 'export DOTNET_ROOT="$HOME/.dotnet"'
+addrc 'export PATH="$PATH:$HOME/.dotnet:$HOME/.dotnet/tools"'`,
+  cask:'dotnet-sdk', wg:'Microsoft.DotNet.SDK.10'},
+ // ---------- clouds
+ {id:'gcp',g:'clouds',l:'GCP',d:'gcloud CLI',w:[2,.9],
+  lin:R`if has gcloud; then skip gcloud; else
+  curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | $SUDO gpg --dearmor --yes -o /usr/share/keyrings/cloud.google.gpg
+  echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | $SUDO tee /etc/apt/sources.list.d/google-cloud-sdk.list >/dev/null
+  $SUDO apt-get update -qq && $SUDO apt-get install -y -qq google-cloud-cli
+  ok gcloud
+fi`,
+  mac:'brew install --cask gcloud-cli || brew install --cask google-cloud-sdk', wg:'Google.CloudSDK', next:'gcloud auth login && gcloud auth application-default login'},
+ {id:'aws',g:'clouds',l:'AWS',d:'AWS CLI v2',w:[1,.25],
+  lin:R`if has aws; then skip aws; else
+  TMP="$(mktemp -d)"
+  curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$UARCH.zip" -o "$TMP/aws.zip"
+  unzip -q "$TMP/aws.zip" -d "$TMP" && $SUDO "$TMP/aws/install" >/dev/null; rm -rf "$TMP"
+  ok "$(aws --version)"
+fi`,
+  brew:'awscli', wg:'Amazon.AWSCLI', next:'aws configure sso'},
+ {id:'azure',g:'clouds',l:'Azure',d:'az CLI',w:[2,.6],
+  lin:'if has az; then skip az; else curl -fsSL https://aka.ms/InstallAzureCLIDeb | $SUDO bash >/dev/null; ok az; fi',
+  brew:'azure-cli', wg:'Microsoft.AzureCLI', next:'az login'},
+ // ---------- infra
+ {id:'docker',g:'infra',l:'Docker',d:'engine on Linux, Docker Desktop on Windows/macOS',w:[2,.5],
+  lin:R`if [ "$IN_CONTAINER" = 1 ]; then note "inside a container: skipping the engine (use docker-in-docker)"
+elif has docker; then skip docker
+else
+  if [ "$IS_WSL" = 1 ]; then note "on WSL, Docker Desktop's WSL integration is smoother; installing the engine anyway"; fi
+  curl -fsSL https://get.docker.com | $SUDO sh >/dev/null
+  $SUDO usermod -aG docker "$(id -un)"
+  ok "docker engine + compose (log out/in for the group)"
+fi`,
+  mac:'brew install --cask docker-desktop || brew install --cask docker', wg:'Docker.DockerDesktop'},
+ {id:'podman',g:'infra',l:'Podman',d:'daemonless containers',w:[1,.3],apt:'podman',brew:'podman',wg:'RedHat.Podman',next:'podman machine init && podman machine start   (macOS / Windows)'},
+ {id:'terraform',g:'infra',l:'Terraform',d:'',w:[.5,.1],
+  lin:R`if has terraform; then skip terraform; else
+  curl -fsSL https://apt.releases.hashicorp.com/gpg | $SUDO gpg --dearmor --yes -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $CODENAME main" | $SUDO tee /etc/apt/sources.list.d/hashicorp.list >/dev/null
+  $SUDO apt-get update -qq && $SUDO apt-get install -y -qq terraform
+  ok terraform
+fi`,
+  brew:'hashicorp/tap/terraform', wg:'Hashicorp.Terraform'},
+ {id:'opentofu',g:'infra',l:'OpenTofu',d:'open-source Terraform fork',w:[.5,.1],
+  lin:R`if has tofu; then skip opentofu; else
+  curl -fsSL https://get.opentofu.org/install-opentofu.sh -o /tmp/install-opentofu.sh
+  sh /tmp/install-opentofu.sh --install-method deb >/dev/null && ok opentofu || note "opentofu install failed - see opentofu.org/docs"
+  rm -f /tmp/install-opentofu.sh
+fi`, brew:'opentofu', wg:'OpenTofu.Tofu'},
+ {id:'pulumi',g:'infra',l:'Pulumi',d:'IaC in real languages',w:[.5,.2],
+  lin:R`if has pulumi || [ -x "$HOME/.pulumi/bin/pulumi" ]; then skip pulumi; else curl -fsSL https://get.pulumi.com | sh >/dev/null 2>&1; ok pulumi; fi
+addrc 'export PATH="$PATH:$HOME/.pulumi/bin"'`, brew:'pulumi/tap/pulumi', wg:'Pulumi.Pulumi', next:'pulumi login'},
+ {id:'ansible',g:'infra',l:'Ansible',d:'',w:[1,.2],apt:'ansible',brew:'ansible',na:{win:'Ansible has no Windows control node - it goes in WSL'}},
+ {id:'kubectl',g:'infra',l:'kubectl',d:'',w:[.3,.05],
+  lin:R`if has kubectl; then skip kubectl; else
+  curl -fsSLo /tmp/kubectl "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/$ARCH/kubectl"
+  $SUDO install -m 0755 /tmp/kubectl /usr/local/bin/kubectl && rm /tmp/kubectl
+  ok kubectl
+fi`,
+  brew:'kubernetes-cli', wg:'Kubernetes.kubectl'},
+ {id:'helm',g:'infra',l:'Helm',d:'',w:[.3,.05],
+  lin:'if has helm; then skip helm; else curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash >/dev/null; ok helm; fi', brew:'helm', wg:'Helm.Helm'},
+ {id:'k9s',g:'infra',l:'k9s',d:'cluster TUI',w:[.3,.05],
+  lin:R`if has k9s; then skip k9s; else curl -fsSL "https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_$ARCH.tar.gz" | $SUDO tar -xz -C /usr/local/bin k9s; ok k9s; fi`, brew:'k9s', wg:'Derailed.k9s'},
+ {id:'kubectx',g:'infra',l:'kubectx + kubens',d:'switch clusters and namespaces fast',w:[.1,.01],apt:'kubectx',brew:'kubectx',na:{win:'use WSL, or scoop install kubectx'}},
+ {id:'lazydocker',g:'infra',l:'lazydocker',d:'Docker TUI',w:[.2,.03],
+  lin:R`if has lazydocker; then skip lazydocker; else curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | DIR="$HOME/.local/bin" bash >/dev/null; ok lazydocker; fi`,
+  brew:'lazydocker', wg:'JesseDuffield.Lazydocker'},
+ // ---------- data
+ {id:'snow',g:'data',l:'Snowflake CLI',d:'snow command',w:[1,.2],uv:['snowflake-cli'],next:'snow connection add'},
+ {id:'dbt',g:'data',l:'dbt',d:'with adapters for what you picked',w:[1.5,.3],uv:['DBT']},
+ {id:'duckdb',g:'data',l:'DuckDB',d:'SQL on CSV/Parquet',w:[.3,.05],
+  lin:R`if has duckdb || [ -x "$HOME/.duckdb/cli/latest/duckdb" ]; then skip duckdb; else curl -fsSL https://install.duckdb.org | sh >/dev/null; ok duckdb; fi
+addrc 'export PATH="$HOME/.duckdb/cli/latest:$PATH"'`, brew:'duckdb', wg:'DuckDB.cli'},
+ {id:'harlequin',g:'data',l:'Harlequin',d:'SQL IDE in your terminal',w:[.3,.1],uv:['harlequin']},
+ {id:'psql',g:'data',l:'psql',d:'Postgres / Redshift client',w:[.3,.02],apt:'postgresql-client',brew:'libpq',mac:'brew link --force libpq >/dev/null 2>&1 || true',na:{win:'no client-only package on winget - use WSL or winget install PostgreSQL.PostgreSQL.17'}},
+ {id:'pgcli',g:'data',l:'pgcli',d:'psql with autocomplete + colours',w:[.2,.05],uv:['pgcli'],brewOnly:'pgcli'},
+ {id:'sqlite',g:'data',l:'SQLite',d:'',w:[.1,.01],apt:'sqlite3',brew:'sqlite',wg:'SQLite.SQLite'},
+ {id:'mongosh',g:'data',l:'mongosh',d:'MongoDB shell',w:[.2,.1],npm:['mongosh']},
+ {id:'redis',g:'data',l:'redis-cli',d:'',w:[.1,.02],apt:'redis-tools',brew:'redis',na:{win:'no native Windows build - use WSL'}},
+ {id:'sqlcl',g:'data',l:'Oracle SQLcl',d:'modern sqlplus (needs Java)',w:[.5,.15],needs:['java'],lin:SQLCL_SH,mac:SQLCL_SH,gb:SQLCL_SH,
+  win:'if (Has sql) { Skip \'sqlcl\' } else {\n  $zip = "$env:TEMP\\sqlcl.zip"\n  Invoke-WebRequest https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip -OutFile $zip\n  Expand-Archive $zip -DestinationPath $env:LOCALAPPDATA -Force; Remove-Item $zip\n  Add-UserPath "$env:LOCALAPPDATA\\sqlcl\\bin"\n  Ok \'Oracle SQLcl (run: sql)\'\n}'},
+ {id:'kcat',g:'data',l:'kcat',d:'Kafka producer/consumer CLI',w:[.1,.01],apt:'kcat',brew:'kcat',na:{win:'kcat has no Windows build - use WSL'}},
+ // ---------- AI
+ {id:'claude',g:'ai',l:'Claude Code',d:'agentic coding in your terminal',w:[.5,.2],
+  lin:'if has claude; then skip claude; else curl -fsSL https://claude.ai/install.sh | bash >/dev/null; ok "Claude Code"; fi',
+  mac:'if has claude; then skip claude; else curl -fsSL https://claude.ai/install.sh | bash >/dev/null; ok "Claude Code"; fi',
+  win:'if (Has claude) { Skip \'claude\' } else { Invoke-RestMethod https://claude.ai/install.ps1 | Invoke-Expression; Refresh-Path; Ok \'Claude Code\' }',
+  gb:'if has claude; then skip claude; else powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "irm https://claude.ai/install.ps1 | iex"; refresh_path; ok "Claude Code"; fi',
+  next:'claude   (sign in on first run)'},
+ {id:'codex',g:'ai',l:'Codex CLI',d:'@openai/codex',w:[.3,.1],npm:['@openai/codex']},
+ {id:'gemini',g:'ai',l:'Gemini CLI',d:'@google/gemini-cli',w:[.3,.1],npm:['@google/gemini-cli']},
+ {id:'copilot',g:'ai',l:'Copilot CLI',d:'@github/copilot',w:[.3,.1],npm:['@github/copilot']},
+ {id:'opencode',g:'ai',l:'OpenCode',d:'opencode-ai',w:[.3,.1],npm:['opencode-ai']},
+ {id:'crush',g:'ai',l:'Crush',d:'@charmland/crush',w:[.3,.1],npm:['@charmland/crush']},
+ {id:'amp',g:'ai',l:'Amp',d:'@sourcegraph/amp',w:[.3,.1],npm:['@sourcegraph/amp']},
+ {id:'aider',g:'ai',l:'aider',d:'pair programming in git',w:[.5,.3],uv:['aider-chat --python 3.12']},
+ {id:'llm',g:'ai',l:'llm',d:'Simon Willison’s CLI for any model',w:[.2,.05],uv:['llm'],brewOnly:'llm'},
+ {id:'ollama',g:'ai',l:'Ollama',d:'local models',w:[1,.6],
+  lin:'if has ollama; then skip ollama; else curl -fsSL https://ollama.com/install.sh | sh >/dev/null; ok ollama; fi', brew:'ollama', wg:'Ollama.Ollama', next:'ollama pull <model>   (e.g. a small Qwen or Llama)'},
+ {id:'lmstudio',g:'ai',l:'LM Studio',d:'local model GUI',w:[1,.5],cask:'lm-studio',wg:'ElementLabs.LMStudio',na:{lin:'grab the AppImage from lmstudio.ai'}},
+ // ---------- deploy
+ {id:'vercel',g:'deploy',l:'Vercel',d:'vercel CLI',w:[.3,.1],npm:['vercel'],next:'vercel login'},
+ {id:'wrangler',g:'deploy',l:'Cloudflare',d:'wrangler CLI',w:[.3,.1],npm:['wrangler'],next:'wrangler login'},
+ {id:'netlify',g:'deploy',l:'Netlify',d:'netlify-cli',w:[.4,.2],npm:['netlify-cli'],next:'netlify login'},
+ {id:'fly',g:'deploy',l:'Fly.io',d:'flyctl',w:[.3,.05],lin:FLY_SH,brew:'flyctl',
+  win:"if (Has flyctl) { Skip 'flyctl' } else { Invoke-RestMethod https://fly.io/install.ps1 | Invoke-Expression; Refresh-Path; Ok 'flyctl' }",
+  gb:'if has flyctl; then skip flyctl; else '+PS_GB('irm https://fly.io/install.ps1 | iex')+'; refresh_path; ok flyctl; fi', next:'fly auth login'},
+ {id:'firebase',g:'deploy',l:'Firebase',d:'firebase-tools',w:[.4,.2],npm:['firebase-tools'],next:'firebase login'},
+ {id:'railway',g:'deploy',l:'Railway',d:'@railway/cli',w:[.2,.05],npm:['@railway/cli'],next:'railway login'},
+ // ---------- terminal goodies
+ {id:'fzf',g:'cli',l:'fzf',d:'fuzzy finder',apt:'fzf',brew:'fzf',wg:'junegunn.fzf'},
+ {id:'rg',g:'cli',l:'ripgrep',d:'grep, but fast',apt:'ripgrep',brew:'ripgrep',wg:'BurntSushi.ripgrep.MSVC'},
+ {id:'bat',g:'cli',l:'bat',d:'cat with colours',apt:'bat',brew:'bat',wg:'sharkdp.bat'},
+ {id:'eza',g:'cli',l:'eza',d:'better ls',lin:'$SUDO apt-get install -y -qq eza 2>/dev/null && ok eza || note "eza is not in this distro\'s repos, skipping"',brew:'eza',wg:'eza-community.eza'},
+ {id:'fd',g:'cli',l:'fd',d:'better find',apt:'fd-find',brew:'fd',wg:'sharkdp.fd'},
+ {id:'jq',g:'cli',l:'jq',d:'',apt:'jq',brew:'jq',wg:'jqlang.jq'},
+ {id:'yq',g:'cli',l:'yq',d:'jq for YAML',lin:R`if has yq; then skip yq; else $SUDO curl -fsSLo /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_$ARCH" && $SUDO chmod +x /usr/local/bin/yq; ok yq; fi`,brew:'yq',wg:'MikeFarah.yq'},
+ {id:'btop',g:'cli',l:'btop',d:'system monitor',apt:'btop',brew:'btop',wg:'aristocratos.btop4win'},
+ {id:'tmux',g:'cli',l:'tmux',d:'',apt:'tmux',brew:'tmux',na:{win:'tmux needs a Unix terminal - it goes in WSL'}},
+ {id:'yazi',g:'cli',l:'yazi',d:'file manager TUI',w:[.2,.03],lin:R`if has yazi; then skip yazi; else
+  YZ="yazi-$UARCH-unknown-linux-gnu"
+  curl -fsSLo /tmp/yazi.zip "https://github.com/sxyazi/yazi/releases/latest/download/$YZ.zip"
+  unzip -qo /tmp/yazi.zip -d /tmp && install -m 755 "/tmp/$YZ/yazi" "/tmp/$YZ/ya" "$HOME/.local/bin/" && rm -rf /tmp/yazi.zip "/tmp/$YZ"
+  ok yazi
+fi`,brew:'yazi',wg:'sxyazi.yazi'},
+ {id:'glow',g:'cli',l:'glow',d:'markdown in the terminal',lin:R`if has glow; then skip glow; else
+  curl -fsSL https://repo.charm.sh/apt/gpg.key | $SUDO gpg --dearmor --yes -o /etc/apt/keyrings/charm.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | $SUDO tee /etc/apt/sources.list.d/charm.list >/dev/null
+  $SUDO apt-get update -qq && $SUDO apt-get install -y -qq glow
+  ok glow
+fi`,brew:'glow',wg:'charmbracelet.glow'},
+ {id:'ytdlp',g:'cli',l:'yt-dlp',d:'',uv:['yt-dlp'],brewOnly:'yt-dlp',wg:'yt-dlp.yt-dlp'},
+ {id:'ffmpeg',g:'cli',l:'ffmpeg',d:'',w:[1,.4],apt:'ffmpeg',brew:'ffmpeg',wg:'Gyan.FFmpeg'},
+ // ---------- shell superpowers
+ {id:'zoxide',g:'boost',l:'zoxide',d:'cd that learns: z proj',lin:'if has zoxide; then skip zoxide; else curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh >/dev/null 2>&1; ok zoxide; fi',brew:'zoxide',wg:'ajeetdsouza.zoxide',
+  init:INIT('eval "$(zoxide init SH)"','zoxide init fish | source','Invoke-Expression (& { (zoxide init powershell | Out-String) })')},
+ {id:'atuin',g:'boost',l:'atuin',d:'searchable shell history (Ctrl+R)',w:[.2,.03],lin:R`if has atuin; then skip atuin; else
+  AT="atuin-$UARCH-unknown-linux-gnu"
+  if curl -fsSL "https://github.com/atuinsh/atuin/releases/latest/download/$AT.tar.gz" | tar -xz -C /tmp; then
+    install -m 755 "/tmp/$AT/atuin" "$HOME/.local/bin/" && ok atuin
+  else note "atuin download failed - see atuin.sh"; fi
+  rm -rf "/tmp/$AT"
+fi`,brew:'atuin',na:{win:'atuin has no stable Windows build - it goes in WSL'},
+  init:{zsh:'eval "$(atuin init zsh --disable-up-arrow)"',fish:'atuin init fish --disable-up-arrow | source'}},
+ {id:'direnv',g:'boost',l:'direnv',d:'per-folder env vars from .envrc',apt:'direnv',brew:'direnv',na:{win:'direnv needs a Unix shell - it goes in WSL'},
+  init:INIT('eval "$(direnv hook SH)"','direnv hook fish | source')},
+ {id:'mise',g:'boost',l:'mise',d:'one version manager for every runtime',w:[.2,.03],lin:'if has mise; then skip mise; else curl -fsSL https://mise.run | sh >/dev/null 2>&1; ok mise; fi',brew:'mise',wg:'jdx.mise',
+  init:INIT('eval "$(mise activate SH)"','mise activate fish | source','(& mise activate pwsh) | Out-String | Invoke-Expression')},
+ {id:'just',g:'boost',l:'just',d:'a friendlier make',lin:R`if has just; then skip just; else curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "$HOME/.local/bin" >/dev/null 2>&1; ok just; fi`,brew:'just',wg:'Casey.Just'},
+ {id:'tldr',g:'boost',l:'tldr',d:'man pages, but just the examples',lin:'$SUDO apt-get install -y -qq tealdeer 2>/dev/null && ok tealdeer || note "tealdeer is not in this distro\'s repos, skipping"',brew:'tealdeer',wg:'dbrgn.tealdeer',next:'tldr --update'},
+ {id:'zellij',g:'boost',l:'zellij',d:'tmux with a friendly UI',w:[.2,.04],lin:R`if has zellij; then skip zellij; else curl -fsSL "https://github.com/zellij-org/zellij/releases/latest/download/zellij-$UARCH-unknown-linux-musl.tar.gz" | tar -xz -C "$HOME/.local/bin" zellij; ok zellij; fi`,brew:'zellij',na:{win:'zellij has no Windows build yet - it goes in WSL'}},
+ {id:'hyperfine',g:'boost',l:'hyperfine',d:'benchmark any command',apt:'hyperfine',brew:'hyperfine',wg:'sharkdp.hyperfine'},
+ {id:'httpie',g:'boost',l:'HTTPie',d:'curl for humans',w:[.2,.05],uv:['httpie'],brewOnly:'httpie'},
+ {id:'duf',g:'boost',l:'duf',d:'disk usage, readable',apt:'duf',brew:'duf',wg:'muesli.duf'},
+ {id:'ncdu',g:'boost',l:'ncdu',d:'find what ate your disk',apt:'ncdu',brew:'ncdu',na:{win:'use WSL, or WizTree on Windows'}},
+ {id:'fastfetch',g:'boost',l:'fastfetch',d:'system info banner',lin:R`if has fastfetch; then skip fastfetch; else
+  FF_ARCH="amd64"; if [ "$UARCH" = aarch64 ]; then FF_ARCH="aarch64"; fi
+  curl -fsSLo /tmp/fastfetch.deb "https://github.com/fastfetch-cli/fastfetch/releases/latest/download/fastfetch-linux-$FF_ARCH.deb" && $SUDO apt-get install -y -qq /tmp/fastfetch.deb >/dev/null && ok fastfetch
+  rm -f /tmp/fastfetch.deb
+fi`,brew:'fastfetch',wg:'Fastfetch-cli.Fastfetch'},
+ // ---------- git
+ {id:'gh',g:'git',l:'GitHub CLI',d:'PRs and issues from the terminal',w:[.3,.05],lin:R`if has gh; then skip gh; else
+  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | $SUDO tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
+  echo "deb [arch=$ARCH signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | $SUDO tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+  $SUDO apt-get update -qq && $SUDO apt-get install -y -qq gh
+  ok gh
+fi`,brew:'gh',wg:'GitHub.cli',next:'gh auth login'},
+ {id:'lazygit',g:'git',l:'lazygit',d:'git TUI',w:[.2,.03],lin:R`if has lazygit; then skip lazygit; else
+  LG_VER="$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep -Po '"tag_name": *"v\K[^"]*')"
+  LG_ARCH="x86_64"; if [ "$UARCH" = aarch64 ]; then LG_ARCH="arm64"; fi
+  curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v$LG_VER/lazygit_$LG_VER""_Linux_$LG_ARCH.tar.gz" | tar -xz -C "$HOME/.local/bin" lazygit
+  ok "lazygit $LG_VER"
+fi`,brew:'lazygit',wg:'JesseDuffield.lazygit'},
+ {id:'delta',g:'git',l:'delta',d:'syntax-highlighted diffs, wired into git',lin:'$SUDO apt-get install -y -qq git-delta 2>/dev/null && ok delta || note "git-delta is not in this distro\'s repos, skipping"',brew:'git-delta',wg:'dandavison.delta'},
+ {id:'gitlfs',g:'git',l:'Git LFS',d:'large files in git',apt:'git-lfs',brew:'git-lfs',wg:'GitHub.GitLFS'},
+ {id:'precommit',g:'git',l:'pre-commit',d:'git hooks manager',w:[.2,.05],uv:['pre-commit'],brewOnly:'pre-commit'},
+ {id:'gitleaks',g:'git',l:'gitleaks',d:'catch secrets before they ship',w:[.1,.02],lin:R`if has gitleaks; then skip gitleaks; else
+  GL_VER="$(curl -fsSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep -Po '"tag_name": *"v\K[^"]*')"
+  GL_ARCH="x64"; if [ "$UARCH" = aarch64 ]; then GL_ARCH="arm64"; fi
+  curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$GL_VER/gitleaks_$GL_VER""_linux_$GL_ARCH.tar.gz" | tar -xz -C "$HOME/.local/bin" gitleaks
+  ok "gitleaks $GL_VER"
+fi`,brew:'gitleaks',wg:'Gitleaks.Gitleaks'},
+ // ---------- network & security
+ {id:'tailscale',g:'sec',l:'Tailscale',d:'private mesh VPN',w:[.3,.1],lin:R`if [ "$IN_CONTAINER" = 1 ]; then note "inside a container: skipping tailscale"
+elif has tailscale; then skip tailscale
+else curl -fsSL https://tailscale.com/install.sh | sh >/dev/null; ok tailscale; fi`,mac:'brew install --cask tailscale-app || brew install --cask tailscale',wg:'tailscale.tailscale',next:'sudo tailscale up'},
+ {id:'cloudflared',g:'sec',l:'cloudflared',d:'tunnels to localhost',w:[.2,.05],lin:R`if has cloudflared; then skip cloudflared; else
+  curl -fsSLo /tmp/cloudflared.deb "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$ARCH.deb" && $SUDO apt-get install -y -qq /tmp/cloudflared.deb >/dev/null && ok cloudflared
+  rm -f /tmp/cloudflared.deb
+fi`,brew:'cloudflared',wg:'Cloudflare.cloudflared'},
+ {id:'op',g:'sec',l:'1Password CLI',d:'secrets in scripts with op run',w:[.1,.03],lin:R`if has op; then skip op; else
+  curl -fsSL https://downloads.1password.com/linux/keys/1password.asc | $SUDO gpg --dearmor --yes -o /usr/share/keyrings/1password-archive-keyring.gpg
+  echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$ARCH stable main" | $SUDO tee /etc/apt/sources.list.d/1password.list >/dev/null
+  $SUDO apt-get update -qq && $SUDO apt-get install -y -qq 1password-cli && ok "1Password CLI"
+fi`,cask:'1password-cli',wg:'AgileBits.1Password.CLI',next:'op signin'},
+ {id:'age',g:'sec',l:'age',d:'simple file encryption',apt:'age',brew:'age',wg:'FiloSottile.age'},
+ {id:'mkcert',g:'sec',l:'mkcert',d:'trusted HTTPS on localhost',apt:'mkcert libnss3-tools',brew:'mkcert',wg:'FiloSottile.mkcert',next:'mkcert -install'},
+ {id:'trivy',g:'sec',l:'Trivy',d:'scan images, repos and IaC',w:[.2,.1],lin:'if has trivy; then skip trivy; else curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b "$HOME/.local/bin" >/dev/null 2>&1; ok trivy; fi',brew:'trivy',wg:'AquaSecurity.Trivy'},
+ // ---------- android
+ {id:'adb',g:'android',l:'adb + fastboot',d:'',w:[.3,.05],apt:'adb fastboot',cask:'android-platform-tools',wg:'Google.PlatformTools',linNote:'WSL cannot see USB devices without usbipd-win - run adb from Windows instead'},
+ {id:'scrcpy',g:'android',l:'scrcpy',d:'mirror your phone',w:[.3,.05],apt:'scrcpy',brew:'scrcpy',wg:'Genymobile.scrcpy'},
+ // ---------- editors
+ {id:'vscode',g:'editors',l:'VS Code',d:'plus extensions for your stack',w:[2,.4],
+  lin:R`if [ "$IN_CONTAINER" = 1 ] || [ "$IS_WSL" = 1 ]; then note "VS Code lives on the host here; 'code .' opens it via Remote/WSL"
+elif has code; then skip code
+else
+  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/ms.gpg
+  $SUDO install -D -o root -g root -m 644 /tmp/ms.gpg /etc/apt/keyrings/packages.microsoft.gpg && rm /tmp/ms.gpg
+  echo "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | $SUDO tee /etc/apt/sources.list.d/vscode.list >/dev/null
+  $SUDO apt-get update -qq && $SUDO apt-get install -y -qq code
+  ok code
+fi`,cask:'visual-studio-code',wg:'Microsoft.VisualStudioCode'},
+ {id:'cursor',g:'editors',l:'Cursor',d:'',w:[2,.5],cask:'cursor',wg:'Anysphere.Cursor',na:{lin:'grab the .deb/AppImage from cursor.com (on WSL, install it on Windows)'}},
+ {id:'zed',g:'editors',l:'Zed',d:'fast native editor',w:[.5,.3],lin:R`if [ "$IN_CONTAINER" = 1 ] || [ "$IS_WSL" = 1 ]; then note "Zed is a desktop app - install it on the host"
+elif has zed || [ -x "$HOME/.local/bin/zed" ]; then skip zed
+else curl -fsSL https://zed.dev/install.sh | sh >/dev/null; ok zed; fi`,cask:'zed',wg:'ZedIndustries.Zed'},
+ {id:'windsurf',g:'editors',l:'Windsurf',d:'',w:[2,.5],cask:'windsurf',wg:'Codeium.Windsurf',na:{lin:'grab the .deb from windsurf.com'}},
+ {id:'jetbrains',g:'editors',l:'JetBrains Toolbox',d:'IntelliJ, PyCharm, DataGrip…',w:[1,.3],cask:'jetbrains-toolbox',wg:'JetBrains.Toolbox',na:{lin:'download the tarball from jetbrains.com/toolbox-app'}},
+ {id:'nvim',g:'editors',l:'Neovim + LazyVim',d:'',w:[1,.1],
+  lin:R`if has nvim; then skip nvim; else
+  NV_ARCH="x86_64"; if [ "$UARCH" = aarch64 ]; then NV_ARCH="arm64"; fi
+  curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-$NV_ARCH.tar.gz" | $SUDO tar -xz -C /opt
+  $SUDO ln -sf "/opt/nvim-linux-$NV_ARCH/bin/nvim" /usr/local/bin/nvim
+fi
+[ -d "$HOME/.config/nvim" ] || git clone -q --depth 1 https://github.com/LazyVim/starter "$HOME/.config/nvim"
+ok "nvim + LazyVim"`,
+  brew:'neovim',mac:'[ -d "$HOME/.config/nvim" ] || git clone -q --depth 1 https://github.com/LazyVim/starter "$HOME/.config/nvim"',
+  wg:'Neovim.Neovim',win:'if (-not (Test-Path "$env:LOCALAPPDATA\\nvim")) { git clone -q --depth 1 https://github.com/LazyVim/starter "$env:LOCALAPPDATA\\nvim" }',
+  gb:'[ -d "$LOCALAPPDATA/nvim" ] || git clone -q --depth 1 https://github.com/LazyVim/starter "$(cygpath "$LOCALAPPDATA")/nvim"'},
+ {id:'helix',g:'editors',l:'Helix',d:'',w:[.3,.1],lin:R`if has hx; then skip helix; else
+  if grep -qi ubuntu /etc/os-release; then $SUDO add-apt-repository -y ppa:maveonair/helix-editor >/dev/null && $SUDO apt-get update -qq && $SUDO apt-get install -y -qq helix && ok helix
+  else note "helix: no Debian repo - see helix-editor.com"; fi
+fi`,brew:'helix',wg:'Helix.Helix'},
+ // ---------- desktop apps
+ {id:'wt',g:'apps',l:'Windows Terminal',d:'',wg:'Microsoft.WindowsTerminal',na:{lin:'Windows only',mac:'Windows only'}},
+ {id:'wezterm',g:'apps',l:'WezTerm',d:'GPU terminal, Lua config',w:[.3,.2],cask:'wezterm',wg:'wez.wezterm',na:{lin:'flatpak install flathub org.wezfurlong.wezterm'}},
+ {id:'ghostty',g:'apps',l:'Ghostty',d:'fast native terminal',w:[.2,.1],cask:'ghostty',na:{win:'no Windows build yet',lin:'packages per distro - see ghostty.org'}},
+ {id:'pwsh',g:'apps',l:'PowerShell 7',d:'',cask:'powershell',wg:'Microsoft.PowerShell',na:{lin:'not installed on Linux by this script'}},
+ {id:'powertoys',g:'apps',l:'PowerToys',d:'FancyZones, Run, Peek',w:[.5,.3],wg:'Microsoft.PowerToys',na:{lin:'Windows only',mac:'Windows only'}},
+ {id:'raycast',g:'apps',l:'Raycast',d:'launcher on steroids',w:[.2,.1],cask:'raycast',na:{lin:'macOS only',win:'macOS only'}},
+ {id:'chrome',g:'apps',l:'Chrome',d:'',cask:'google-chrome',wg:'Google.Chrome',na:{lin:'not installed on Linux by this script'}},
+ {id:'bruno',g:'apps',l:'Bruno',d:'offline API client, git-friendly',w:[.3,.2],cask:'bruno',wg:'Bruno.Bruno',na:{lin:'grab the .deb from usebruno.com'}},
+ {id:'dbeaver',g:'apps',l:'DBeaver',d:'universal database GUI',w:[.5,.3],cask:'dbeaver-community',wg:'dbeaver.dbeaver',na:{lin:'snap install dbeaver-ce'}},
+ {id:'obsidian',g:'apps',l:'Obsidian',d:'markdown notes',w:[.3,.2],cask:'obsidian',wg:'Obsidian.Obsidian',na:{lin:'grab the AppImage from obsidian.md'}},
+ {id:'powerbi',g:'apps',l:'Power BI Desktop',d:'',w:[3,1],wg:'Microsoft.PowerBI',na:{lin:'Windows only',mac:'Windows only'}},
+ {id:'rufus',g:'apps',l:'Rufus',d:'bootable USBs',wg:'Rufus.Rufus',na:{lin:'Windows only',mac:'Windows only'}},
+];
+const BY = Object.fromEntries(I.map(x=>[x.id,x]));
+const GROUPS = {langs:'Languages',clouds:'Clouds',infra:'Infra & ops',data:'Data tools',ai:'AI coding',deploy:'Deploy targets',cli:'Terminal goodies',boost:'Shell superpowers',git:'Git power-ups',sec:'Network & security',android:'Android',editors:'Editors',apps:'Desktop apps'};
+const SINGLE = {
+  os:{t:'Which platform?',o:[['win','Windows · PowerShell','winget + PowerShell 7 profile'],['gitbash','Windows · Git Bash','winget + ~/.bashrc'],['wsl','WSL (Ubuntu)','Linux side of your Windows laptop'],['ubuntu','Ubuntu / Debian','fresh VM, EC2, Zorin'],['mac','macOS','Homebrew']]},
+  shell:{t:'Shell',o:[['zsh','zsh + oh-my-zsh + starship','autosuggestions & syntax highlighting'],['bash','bash + starship',''],['fish','fish + starship','']]},
+  wsl:{t:'Also set up WSL?',o:[['yes','WSL Ubuntu too','adds wsl-setup.sh for the Linux side'],['no','Windows only','']]},
+  themeApply:{t:'Apply the theme to',o:[['yes','prompt, terminal & editors','starship palette, VS Code / Cursor colours, terminal scheme, Nerd Font'],['no','this page only','scripts leave your colours alone']]},
+  signing:{t:'Commit signing',o:[['new','a new SSH key','ed25519, also used for signing'],['existing','my existing SSH key','~/.ssh/id_ed25519'],['off','no signing','']]},
+  out:{t:'Export as',o:[['script','a setup script','.ps1 or .sh for the platform you picked'],['docker','a Dockerfile','Linux image of the same setup'],['devc','a devcontainer','for VS Code / Codespaces']]},
+};
+const ALL = g => I.filter(x=>x.g===g).map(x=>x.id);
+const role = o => Object.fromEntries(Object.keys(GROUPS).map(g=>[g,o[g]||[]]));
+const MINE = role({langs:['python','node','java'],clouds:['gcp','aws'],infra:['docker','terraform','ansible','lazydocker'],data:['snow','psql','sqlite','sqlcl','kcat'],ai:['claude','codex','gemini','opencode','crush','ollama'],deploy:['vercel','wrangler'],cli:['fzf','rg','bat','eza','fd','jq','yq','btop','tmux','yazi','glow','ytdlp','ffmpeg'],git:['gh','lazygit'],android:['adb','scrcpy'],editors:['vscode','cursor','nvim','helix'],apps:['wt','pwsh','chrome','powerbi','rufus']});
+const ROLES = {
+  'My stack':MINE,
+  'Data engineer':role({langs:['python','java'],clouds:['gcp','aws'],infra:['docker','ansible'],data:['snow','dbt','duckdb','harlequin','psql','pgcli','sqlcl','kcat'],ai:['claude'],cli:['fzf','rg','bat','jq','yq'],boost:['zoxide','just','tldr','httpie'],git:['gh','lazygit','precommit'],sec:['age'],editors:['vscode'],apps:['wt','pwsh','powerbi','dbeaver']}),
+  'Frontend':role({langs:['node','bun','deno'],infra:['docker'],data:['sqlite'],ai:['claude','copilot'],deploy:['vercel','wrangler','netlify','firebase'],cli:['fzf','rg','bat','eza','fd','jq'],boost:['zoxide','mise','just','httpie'],git:['gh','lazygit','delta'],sec:['mkcert','cloudflared'],editors:['vscode','zed'],apps:['wt','pwsh','chrome','bruno']}),
+  'Platform / SRE':role({langs:['python','go'],clouds:['gcp','aws','azure'],infra:ALL('infra'),ai:['claude'],deploy:['fly'],cli:['fzf','rg','bat','eza','jq','yq','btop','tmux'],boost:['zoxide','atuin','direnv','mise','just','tldr','hyperfine','zellij','duf','ncdu'],git:['gh','lazygit','delta','gitleaks'],sec:ALL('sec'),editors:['vscode','nvim'],apps:['wt','pwsh','wezterm']}),
+  'AI tinkerer':role({langs:['python','node','bun'],infra:['docker'],data:['sqlite','duckdb'],ai:ALL('ai'),deploy:['vercel','wrangler'],cli:['fzf','rg','bat','jq','glow','ytdlp','ffmpeg'],boost:['zoxide','mise','httpie'],git:['gh','lazygit'],android:['adb','scrcpy'],editors:['vscode','cursor','zed'],apps:['wt','pwsh','chrome']}),
+  'Terminal maximalist':role({langs:['python','node','rust','go'],infra:['docker','lazydocker','k9s'],data:['duckdb','harlequin'],ai:['claude','aider'],cli:ALL('cli'),boost:ALL('boost'),git:ALL('git'),sec:['age','tailscale'],editors:['nvim','helix','zed'],apps:['wt','wezterm','ghostty','pwsh']}),
+};
+const DEF = {role:'My stack',os:'win',wsl:'yes',...MINE,shell:'zsh',theme:'system',themeApply:'yes',name:'Ayaz',email:'',signing:'new',dotfiles:'',out:'script'};
+let S = {...DEF};
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+try {
+  let v = JSON.parse(store.get('devbox-v3'));
+  if (!v) { v = JSON.parse(store.get('devbox-v2')); if (v) { if (v.theme==='none') { v.theme='system'; v.themeApply='no'; } } }
+  if (v) S = {...DEF, ...v};
+  if (!TBY[S.theme] && S.theme!=='system') S.theme='system';
+  for (const g of Object.keys(GROUPS)) S[g]=(S[g]||[]).filter(id=>BY[id]);
+} catch(e) {}
+const save = () => store.set('devbox-v3', JSON.stringify(S));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clean = s => String(s||'').replace(/["'`$\\;|&<>]/g,'').trim();
+const famOf = os => os==='mac'?'mac':(os==='win'||os==='gitbash')?'win':'lin';
+const FAMNAME = {lin:'Linux',mac:'macOS',win:'Windows'};
+const $ = id => document.getElementById(id);
+
+/* ================= availability & selection ================= */
+function recipe(it, fam){
+  if (it.na && it.na[fam]) return null;
+  if (fam==='lin') return it.apt||it.lin||it.uv||it.npm ? 1 : null;
+  if (fam==='mac') return it.brew||it.cask||it.mac||it.brewOnly||it.uv||it.npm ? 1 : null;
+  return it.wg||it.win||it.uv||it.npm ? 1 : null;
+}
+function picked(){ return Object.keys(GROUPS).flatMap(g=>S[g]||[]); }
+function selection(fam){
+  const ids = new Set(picked().filter(id=>BY[id] && recipe(BY[id],fam)));
+  for (const id of [...ids]) for (const n of (BY[id].needs||[])) ids.add(n);
+  const needNode = [...ids].some(id=>BY[id].npm && id!=='node');
+  const needUv = [...ids].some(id=>BY[id].uv && !(fam==='mac'&&BY[id].brewOnly) && !(fam==='win'&&BY[id].wg));
+  if (needNode) ids.add('node');
+  return {ids, needUv:needUv||ids.has('python'), list:I.filter(x=>ids.has(x.id))};
+}
+function skipped(fam){ return picked().filter(id=>BY[id] && !recipe(BY[id],fam)).map(id=>BY[id]); }
+
+/* ================= sentence ================= */
+function tok(k, opt={}) {
+  let txt, unset=false, ic=opt.ic?'<span class="ic">'+opt.ic+'</span>':'';
+  if (opt.fixed) return '<span class="tok fixed">'+esc(opt.fixed)+'</span>';
+  if (k==='theme') { const t=T(); txt=S.theme==='system'?'system · '+t.n:t.n; ic='<span class="dot" style="background:'+t.sw+'"></span>'; }
+  else if (k==='name'||k==='email'||k==='dotfiles') { txt = S[k] || opt.ph; unset = !S[k]; }
+  else if (SINGLE[k]) txt = SINGLE[k].o.find(o=>o[0]===S[k])[1];
+  else {
+    const L = (S[k]||[]).map(id=>BY[id].l);
+    txt = L.length===0 ? 'nothing' : L.length<=3 ? L.join(', ') : L.slice(0,2).join(', ')+' <span class="n">+'+(L.length-2)+'</span>';
+    unset = L.length===0;
+    return '<button class="tok'+(unset?' unset':'')+'" data-k="'+k+'" aria-label="'+esc(GROUPS[k]+': '+(L.join(', ')||'nothing'))+'">'+ic+(L.length<=3?esc(txt):esc(L.slice(0,2).join(', '))+' <span class="n">+'+(L.length-2)+'</span>')+'</button>';
+  }
+  return '<button class="tok'+(unset?' unset':'')+'" data-k="'+k+'">'+ic+esc(txt)+'</button>';
+}
+function stats(){
+  const fam=famOf(S.os), sel=selection(fam); let m=4,g=.8;
+  for (const it of sel.list){ const w=it.w||[.2,.02]; m+=w[0]; g+=w[1]; }
+  if (fam==='win' && S.wsl==='yes') m+=6;
+  return {fam, n:sel.list.length, m:Math.round(m), g:g.toFixed(1), miss:skipped(fam).length};
+}
+function render() {
+  const fam=famOf(S.os), win=fam==='win';
+  const shellTok = S.os==='win'?tok(0,{fixed:'PowerShell 7 + starship'}):S.os==='gitbash'?tok(0,{fixed:'Git Bash + starship'}):tok('shell');
+  $('sentence').innerHTML =
+    '<p class="sent">Set up my '+tok('os',{ic:S.os==='win'?'PS':'›_'})+' box with '+tok('langs')+', talking to '+tok('clouds')+'.</p>'+
+    '<p class="sent">Ship with '+tok('infra')+' and wrangle data with '+tok('data')+'.</p>'+
+    '<p class="sent">Pair-program with '+tok('ai')+' and deploy to '+tok('deploy')+'.</p>'+
+    '<p class="sent">Live in '+shellTok+' with '+tok('cli')+', supercharged by '+tok('boost')+'.</p>'+
+    '<p class="sent">Track code with '+tok('git')+', lock things down with '+tok('sec')+', poke phones with '+tok('android')+', and code in '+tok('editors')+'.</p>'+
+    (fam!=='lin'?'<p class="sent">Also grab '+tok('apps')+(win?', and set up '+tok('wsl'):'')+'.</p>':'')+
+    '<p class="sent">Theme it '+tok('theme')+' across '+tok('themeApply')+'. Commit as '+tok('name',{ph:'add your name'})+' '+tok('email',{ph:'add an email'})+', signed with '+tok('signing')+'.</p>'+
+    '<p class="sent">Pull dotfiles from '+tok('dotfiles',{ph:'nowhere'})+', and hand it over as '+tok('out')+'.</p>';
+  $('presets').innerHTML = Object.keys(ROLES).map(r=>'<button class="chip" data-r="'+r+'" aria-pressed="'+(S.role===r)+'">'+r+'</button>').join('');
+  const st=stats();
+  $('stats').innerHTML='<span><b>'+st.n+'</b> tools</span><span>◷ <b>~'+st.m+' min</b> first run</span><span><b>~'+st.g+' GB</b></span>'+(st.miss?'<span class="warnc">'+st.miss+' not on '+FAMNAME[st.fam]+'</span>':'');
+  renderStatus();
+}
+let mode='NORMAL';
+function renderStatus(){
+  const st=stats(), t=T(), plat=SINGLE.os.o.find(o=>o[0]===S.os)[1];
+  $('status').innerHTML='<span class="mode">'+mode+'</span><span class="sep"><b>'+esc(plat)+'</b></span><span class="sep">'+st.n+' tools</span><span class="sep hide-s">~'+st.m+' min · '+st.g+' GB</span><span class="sp"></span>'+
+    '<span><button id="stTheme" title="Choose theme"><span class="dot" style="background:'+t.sw+'"></span>'+esc(t.n)+'</button></span><span class="sep hide-s"><button id="stK">'+(isMac?'⌘K':'Ctrl K')+'</button></span>';
+}
+
+/* ================= theme application ================= */
+function applyTheme(){
+  const f=full(T()), st=document.documentElement.style;
+  const V={'--bg':f.bg,'--fg':f.fg,'--ac':f.ac,'--on-ac':f.onAc,'--s1':f.s1,'--s2':f.s2,'--s3':f.s3,'--line':f.line,'--muted':f.muted,'--cm':f.comment,'--sel':f.sel,
+    '--red':f.a[1],'--green':f.a[2],'--yellow':f.a[3],'--blue':f.a[4],'--magenta':f.a[5],'--cyan':f.a[6]};
+  for (const k in V) st.setProperty(k,V[k]);
+  st.setProperty('color-scheme',f.dark?'dark':'light');
+  document.querySelector('meta[name=theme-color]').setAttribute('content',f.s1);
+  $('themeDot').style.background=f.sw; $('cycleDot').style.background=f.sw; $('themeLbl').textContent=f.n;
+}
+
+/* ================= picker sheet ================= */
+const scrim=$('scrim'), sheet=$('sheet'), shOpts=$('shOpts'), shFoot=$('shFoot'), shSearch=$('shSearch'), shQ=$('shQ');
+let cur=null, lastFocus=null;
+const PL = it => '<span class="plat" aria-hidden="true">'+['lin','mac','win'].map(f=>'<i class="'+(recipe(it,f)?'on':'')+'" title="'+FAMNAME[f]+'">'+FAMNAME[f][0]+'</i>').join('')+'</span>';
+function tprev(t){
+  const f=full(t);
+  return '<span class="tprev" style="background:'+f.bg+';color:'+f.fg+'">'+
+    '<span style="color:'+f.comment+';font-style:italic"># '+esc(t.n.toLowerCase())+'.sh</span>'+
+    '<span><span style="color:'+f.a[5]+'">if</span> has <span style="color:'+f.a[4]+'">uv</span>; <span style="color:'+f.a[5]+'">then</span></span>'+
+    '<span>&nbsp; ok <span style="color:'+f.a[2]+'">"python 3.12"</span></span>'+
+    '<span>&nbsp; <span style="color:'+f.a[6]+'">$HOME</span>/<span style="color:'+f.a[3]+'">42</span> <span style="color:'+f.a[1]+'">✗</span></span>'+
+    '<span class="tsl" style="background:'+f.s2+'"><b style="background:'+f.ac+';color:'+f.onAc+'">NORMAL</b><i style="color:'+f.muted+'">main</i><i style="color:'+f.a[2]+'">+5</i><i style="color:'+f.a[1]+'">-7</i></span></span>';
+}
+function themeSheet(){
+  sheet.classList.add('wide');
+  $('shTitle').innerHTML='Theme<small>Changes this page now'+(S.themeApply==='yes'?', and your prompt, terminal and editor when you run the script.':'. Scripts leave your colours alone.')+'</small>';
+  shSearch.hidden=true; shOpts.className='opts';
+  const card = (id,t,label,sub) => '<button class="tcard" role="radio" aria-checked="'+(S.theme===id)+'" data-v="'+id+'">'+tprev(t)+'<span class="tname"><span class="dot" style="background:'+t.sw+'"></span>'+esc(label)+'<small>'+esc(sub)+'</small></span></button>';
+  let h='<div class="tgrid" role="radiogroup" aria-label="Themes">';
+  h+='<p class="tsec">Rune · inspired by the 16 built-in themes of rune.build</p>'+THEMES.filter(t=>t.src==='rune').map(t=>card(t.id,t,t.n,t.dark?'dark':'light')).join('');
+  h+='<p class="tsec">Classics</p>'+THEMES.filter(t=>t.src==='classic').map(t=>card(t.id,t,t.n,t.dark?'dark':'light')).join('')+card('system',T(),'Follow system','Ritchie / Carmack');
+  shOpts.innerHTML=h+'</div>';
+  shFoot.innerHTML='<span style="font-size:13px;color:var(--muted)">Apply to</span>'+SINGLE.themeApply.o.map(o=>'<button class="chip" data-apply="'+o[0]+'" aria-pressed="'+(S.themeApply===o[0])+'">'+esc(o[1])+'</button>').join('')+'<span class="grow"></span><button class="btn pri" id="shDone">Done</button>';
+  $('shDone').onclick=closeSheet;
+}
+function groupRows(k,q){
+  const fam=famOf(S.os); q=(q||'').toLowerCase();
+  const rows=I.filter(x=>x.g===k && (!q || (x.l+' '+x.d+' '+x.id).toLowerCase().includes(q))).map(x=>{
+    const on=S[k].includes(x.id), na=!recipe(x,fam);
+    const sub=na?'<small class="na">'+esc((x.na&&x.na[fam])||'not available on '+FAMNAME[fam])+'</small>':(x.d?'<small>'+esc(x.d)+'</small>':'');
+    return '<button class="opt" role="checkbox" aria-checked="'+on+'" data-v="'+x.id+'"><span class="box">'+(on?'✓':'')+'</span><span>'+esc(x.l)+sub+'</span>'+PL(x)+'</button>';
+  });
+  return rows.join('')||'<p class="empty">No tool matches “'+esc(q)+'”.</p>';
+}
+function openSheet(k){
+  if(!scrim.classList.contains('on')) lastFocus=document.activeElement;
+  cur=k; sheet.classList.remove('wide'); shSearch.hidden=true;
+  const title=$('shTitle');
+  if(k==='theme'){ themeSheet(); }
+  else if({name:1,email:1,dotfiles:1}[k]){
+    const text={name:['Your name for git','Ayaz'],email:['Your git email','you@example.com'],dotfiles:['Dotfiles repo (empty = none)','github.com/you/dotfiles']}[k];
+    title.textContent=text[0]; shOpts.innerHTML=''; shOpts.className='opts';
+    shFoot.innerHTML='<input id="shIn" autocomplete="off" spellcheck="false" placeholder="'+text[1]+'" value="'+esc(S[k])+'"><button class="btn pri" id="shDone" style="height:46px">Done</button>';
+    const inp=$('shIn');
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')commitText()});
+    $('shDone').onclick=commitText;
+    scrim.classList.add('on'); setTimeout(()=>inp.focus(),50); return;
+  }
+  else if(SINGLE[k]){
+    title.textContent=SINGLE[k].t; shOpts.className='opts radio';
+    shOpts.innerHTML=SINGLE[k].o.map(o=>'<button class="opt" role="radio" aria-checked="'+(S[k]===o[0])+'" data-v="'+o[0]+'"><span class="box"></span><span>'+esc(o[1])+(o[2]?'<small>'+esc(o[2])+'</small>':'')+'</span></button>').join('');
+    shFoot.innerHTML='';
+  } else {
+    const fam=famOf(S.os), n=I.filter(x=>x.g===k).length;
+    title.innerHTML=esc(GROUPS[k])+'<small>'+S[k].length+' of '+n+' picked · L M W = Linux, macOS, Windows · showing '+FAMNAME[fam]+'</small>';
+    shOpts.className='opts';
+    if(n>7){ shSearch.hidden=false; shQ.value=''; }
+    shOpts.innerHTML=groupRows(k,'');
+    shFoot.innerHTML='<button class="chip" id="shAll">All</button><button class="chip" id="shNone">None</button><span class="grow"></span><button class="btn pri" id="shDone">Done</button>';
+    $('shDone').onclick=closeSheet;
+    $('shAll').onclick=()=>{S[k]=ALL(k);S.role='';changed();openSheet(k)};
+    $('shNone').onclick=()=>{S[k]=[];S.role='';changed();openSheet(k)};
+  }
+  scrim.classList.add('on');
+  setTimeout(()=>{ if(!shSearch.hidden) shQ.focus(); else (shOpts.querySelector('[aria-checked=true]')||shOpts.querySelector('.opt,.tcard'))?.focus(); },50);
+}
+shQ.addEventListener('input',()=>{ shOpts.innerHTML=groupRows(cur,shQ.value); });
+shQ.addEventListener('keydown',e=>{ if(e.key==='ArrowDown'){e.preventDefault();shOpts.querySelector('.opt')?.focus()} if(e.key==='Enter'){const b=shOpts.querySelector('.opt'); if(b){e.preventDefault();b.click()}} });
+function commitText(){ S[cur]=cur==='dotfiles'?$('shIn').value.trim().replace(/[^\w.:@\/~-]/g,''):clean($('shIn').value); changed(); closeSheet(); }
+function closeSheet(){ scrim.classList.remove('on'); const b=document.querySelector('.tok[data-k="'+cur+'"]')||lastFocus; b&&b.focus&&b.focus(); }
+shOpts.addEventListener('click',e=>{
+  const tc=e.target.closest('.tcard');
+  if(tc){ S.theme=tc.dataset.v; changed(); shOpts.querySelectorAll('.tcard').forEach(c=>c.setAttribute('aria-checked',c.dataset.v===S.theme)); hoot('Theme: '+T().n+' · '+(T().dark?'dark':'light')+' · '+T().d+'.'); return; }
+  const b=e.target.closest('.opt'); if(!b)return; const v=b.dataset.v;
+  if(SINGLE[cur]){S[cur]=v;changed();closeSheet();return}
+  S[cur]=S[cur].includes(v)?S[cur].filter(x=>x!==v):[...S[cur],v]; S.role='';
+  const on=S[cur].includes(v); b.setAttribute('aria-checked',on); b.querySelector('.box').textContent=on?'✓':'';
+  const small=$('shTitle').querySelector('small'); if(small) small.textContent=small.textContent.replace(/^\d+/,S[cur].length);
+  changed();
+});
+shFoot.addEventListener('click',e=>{ const b=e.target.closest('[data-apply]'); if(!b)return; S.themeApply=b.dataset.apply; changed(); themeSheet(); });
+$('shX').onclick=closeSheet;
+scrim.addEventListener('click',e=>{if(e.target===scrim)closeSheet()});
+$('sentence').addEventListener('click',e=>{const b=e.target.closest('button.tok');if(b)openSheet(b.dataset.k)});
+$('presets').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;S={...S,...ROLES[b.dataset.r],role:b.dataset.r};changed();hoot(b.dataset.r+' preset loaded. '+hootStatus())});
+$('themeBtn').onclick=()=>openSheet('theme');
+$('status').addEventListener('click',e=>{ if(e.target.closest('#stTheme'))openSheet('theme'); if(e.target.closest('#stK'))openPal(); });
+function cycleTheme(d=1){
+  const ids=THEMES.map(t=>t.id); const i=ids.indexOf(S.theme==='system'?T().id:S.theme);
+  S.theme=ids[(i+d+ids.length)%ids.length]; changed(); hoot('Theme: '+T().n+' · '+T().d+'.');
+}
+$('cycle').onclick=()=>cycleTheme(1);
+$('cycleN').textContent=THEMES.length+' themes';
+
+/* ================= shared bits ================= */
+const today=new Date().toISOString().slice(0,10);
+const has=id=>picked().includes(id);
+const applyOn=()=>S.themeApply==='yes';
+function dbtArgs(){ const a=['dbt-snowflake']; if(has('gcp'))a.push('dbt-bigquery'); if(has('duckdb'))a.push('dbt-duckdb'); if(has('psql'))a.push('dbt-postgres'); return 'dbt-core '+a.map(x=>'--with '+x).join(' '); }
+const uvArg = u => u==='DBT'?dbtArgs():u;
+function vsExt(fam){
+  const e=['eamodio.gitlens','usernamehw.errorlens'];
+  if(applyOn()&&T().vs)e.push(T().vs.ext);
+  if(has('python'))e.push('ms-python.python','charliermarsh.ruff');
+  if(has('node'))e.push('dbaeumer.vscode-eslint','esbenp.prettier-vscode','bradlc.vscode-tailwindcss');
+  if(has('bun'))e.push('oven.bun-vscode'); if(has('deno'))e.push('denoland.vscode-deno'); if(has('dotnet'))e.push('ms-dotnettools.csdevkit');
+  if(has('go'))e.push('golang.go'); if(has('rust'))e.push('rust-lang.rust-analyzer'); if(has('java'))e.push('vscjava.vscode-java-pack');
+  if(has('docker'))e.push('ms-azuretools.vscode-docker'); if(has('terraform'))e.push('hashicorp.terraform'); if(has('opentofu'))e.push('opentofu.vscode-opentofu'); if(has('ansible'))e.push('redhat.ansible');
+  if(has('kubectl'))e.push('ms-kubernetes-tools.vscode-kubernetes-tools');
+  if(has('snow'))e.push('snowflake.snowflake-vsc'); if(has('dbt'))e.push('innoverio.vscode-dbt-power-user');
+  if(has('sqlcl'))e.push('oracle.sql-developer'); if(has('direnv'))e.push('mkhl.direnv'); if(has('just'))e.push('nefrob.vscode-just-syntax');
+  if(has('gcp'))e.push('googlecloudtools.cloudcode'); if(has('aws'))e.push('amazonwebservices.aws-toolkit-vscode'); if(has('azure'))e.push('ms-vscode.azurecli');
+  if(fam==='win'&&S.wsl==='yes')e.push('ms-vscode-remote.remote-wsl');
+  e.push('ms-vscode-remote.remote-containers');
+  return e;
+}
+const THEME_NAME = () => T().n;
+const MANAGED = '# devbox-managed: delete this line to keep your own edits';
+function VS_SET(){
+  const t=full(T()), o={};
+  if(t.vs) o['workbench.colorTheme']=t.vs.name;
+  else {
+    o['workbench.colorTheme']=t.dark?'Default Dark Modern':'Default Light Modern';
+    const c={'editor.background':t.bg,'editor.foreground':t.fg,'editorCursor.foreground':t.ac,'editor.selectionBackground':t.sel,'editorLineNumber.foreground':t.muted,'editorLineNumber.activeForeground':t.fg,
+      'sideBar.background':t.s1,'activityBar.background':t.s1,'activityBar.foreground':t.ac,'titleBar.activeBackground':t.s1,'panel.background':t.bg,'editorGroupHeader.tabsBackground':t.s1,
+      'tab.inactiveBackground':t.s1,'tab.activeBackground':t.bg,'tab.activeBorderTop':t.ac,'statusBar.background':t.s2,'statusBar.foreground':t.fg,'focusBorder':t.ac,
+      'button.background':t.ac,'button.foreground':t.onAc,'badge.background':t.ac,'badge.foreground':t.onAc,'terminal.background':t.bg,'terminal.foreground':t.fg,'terminalCursor.foreground':t.ac};
+    const nm=['Black','Red','Green','Yellow','Blue','Magenta','Cyan','White'];
+    nm.forEach((n,i)=>{c['terminal.ansi'+n]=t.a[i]; c['terminal.ansiBright'+n]=t.br[i];});
+    o['workbench.colorCustomizations']=c;
+    o['editor.tokenColorCustomizations']={comments:{foreground:t.comment,fontStyle:'italic'},strings:t.a[2],keywords:t.a[5],functions:t.a[4],numbers:t.a[3],types:t.a[6],variables:t.fg};
+  }
+  o['editor.fontFamily']="'JetBrainsMono Nerd Font', Consolas, monospace";
+  o['terminal.integrated.fontFamily']='JetBrainsMono Nerd Font';
+  o['editor.fontLigatures']=true; o['editor.formatOnSave']=true;
+  return JSON.stringify(o,null,2);
+}
+const STARSHIP = (ascii) => { const t=full(T()); return `${MANAGED}
+# theme: ${t.n}
+format = "$directory$git_branch$git_status$python$nodejs$bun$deno$java$golang$rust$aws$gcloud$kubernetes$cmd_duration$line_break$character"
+palette = "devbox"
+
+[palettes.devbox]
+accent = "${t.ac}"
+blue = "${t.a[4]}"
+green = "${t.a[2]}"
+purple = "${t.a[5]}"
+yellow = "${t.a[3]}"
+red = "${t.a[1]}"
+cyan = "${t.a[6]}"
+grey = "${t.comment}"
+
+[directory]
+style = "bold accent"
+[git_branch]
+style = "bold purple"
+[git_status]
+style = "red"
+[python]
+style = "yellow"
+[nodejs]
+style = "green"
+[golang]
+style = "cyan"
+[kubernetes]
+disabled = false
+style = "blue"
+[cmd_duration]
+style = "grey"
+[character]
+success_symbol = "[${ascii?'>':'❯'}](bold accent)"
+error_symbol = "[${ascii?'>':'❯'}](bold red)"`; };
+function wtScheme(){
+  const t=full(T()), k=['black','red','green','yellow','blue','purple','cyan','white'], o={name:'devbox '+t.n,background:t.bg,foreground:t.fg,cursorColor:t.ac,selectionBackground:t.sel};
+  k.forEach((n,i)=>o[n]=t.a[i]); k.forEach((n,i)=>o['bright'+n[0].toUpperCase()+n.slice(1)]=t.br[i]);
+  return o;
+}
+function ghosttyTheme(){ const t=full(T()); return ['background = '+t.bg,'foreground = '+t.fg,'cursor-color = '+t.ac,'selection-background = '+t.sel].concat(t.a.map((c,i)=>'palette = '+i+'='+c),t.br.map((c,i)=>'palette = '+(i+8)+'='+c)).join('\n'); }
+function themePack(){
+  const t=full(T()), nm=['black','red','green','yellow','blue','magenta','cyan','white'];
+  return `# devbox theme pack · ${t.n} (${t.dark?'dark':'light'}) · generated ${today}
+# ${t.src==='rune'?'Inspired by the '+t.n+' theme in rune.build - colours sampled from its screenshots.':t.d}
+# Paste the block for your terminal. The setup script already applies starship,
+# VS Code / Cursor${has('wt')||famOf(S.os)==='win'?', Windows Terminal':''}${has('ghostty')?' and Ghostty':''} for you.
+
+# ── Windows Terminal · settings.json → "schemes": [ … ] ─────────────
+${JSON.stringify(wtScheme(),null,2)}
+
+# ── Ghostty · ~/.config/ghostty/themes/devbox, then: theme = devbox ──
+${ghosttyTheme()}
+
+# ── WezTerm · ~/.config/wezterm/colors/devbox.toml, then color_scheme = "devbox" ──
+[colors]
+background = "${t.bg}"
+foreground = "${t.fg}"
+cursor_bg = "${t.ac}"
+selection_bg = "${t.sel}"
+ansi = [${t.a.map(c=>'"'+c+'"').join(', ')}]
+brights = [${t.br.map(c=>'"'+c+'"').join(', ')}]
+[metadata]
+name = "devbox"
+
+# ── Alacritty · alacritty.toml ──────────────────────────────────────
+[colors.primary]
+background = "${t.bg}"
+foreground = "${t.fg}"
+[colors.cursor]
+cursor = "${t.ac}"
+[colors.normal]
+${t.a.map((c,i)=>nm[i]+' = "'+c+'"').join('\n')}
+[colors.bright]
+${t.br.map((c,i)=>nm[i]+' = "'+c+'"').join('\n')}
+
+# ── kitty · kitty.conf ──────────────────────────────────────────────
+background ${t.bg}
+foreground ${t.fg}
+cursor ${t.ac}
+selection_background ${t.sel}
+${t.a.concat(t.br).map((c,i)=>'color'+i+' '+c).join('\n')}
+
+# ── VS Code / Cursor · settings.json ────────────────────────────────
+${VS_SET()}
+`;
+}
+function aliasesSh(){
+  const A=["alias gs='git status -sb'","alias gl='git log --oneline --graph -20'","alias gco='git checkout'"];
+  A.push(has('eza')?"alias ll='eza -la --git --group-directories-first --icons'":"alias ll='ls -lah'");
+  if(has('kubectl'))A.push("alias k='kubectl'"); if(has('kubectx'))A.push("alias kx='kubectx'","alias kn='kubens'"); if(has('terraform'))A.push("alias tf='terraform'"); if(has('opentofu'))A.push("alias tofu-plan='tofu plan -out=plan.tfplan'");
+  if(has('docker'))A.push("alias dc='docker compose'"); if(has('lazydocker'))A.push("alias lzd='lazydocker'");
+  if(has('lazygit'))A.push("alias lg='lazygit'"); if(has('ansible'))A.push("alias ap='ansible-playbook'");
+  if(has('python'))A.push("alias py='uv run python'"); if(has('yazi'))A.push("alias y='yazi'"); if(has('just'))A.push("alias j='just'"); if(has('zellij'))A.push("alias zj='zellij'");
+  if(has('gcp'))A.push("alias gcp-proj='gcloud config get-value project'"); if(has('aws'))A.push("alias aws-who='aws sts get-caller-identity'");
+  if(has('claude'))A.push("alias cc='claude'");
+  return A.join('\n');
+}
+function nextSteps(fam){
+  const n=[]; for(const it of selection(fam).list) if(it.next) n.push(it.next);
+  if(has('gh')&&S.signing!=='off') n.push('gh ssh-key add ~/.ssh/id_ed25519.pub --type signing');
+  return n;
+}
+function gitLines(kind){
+  const g=[];
+  if(has('delta')) g.push('git config --global core.pager delta','git config --global interactive.diffFilter "delta --color-only"','git config --global delta.navigate true','git config --global delta.'+(T().dark?'dark':'light')+' true','git config --global merge.conflictStyle zdiff3');
+  if(has('gitlfs')) g.push(kind==='ps'?'git lfs install *> $null':'git lfs install >/dev/null 2>&1 || true');
+  return g;
+}
+
+/* ================= bash family (Linux, macOS, Git Bash) ================= */
+function bashHeader(target, kind){
+  const sel=selection(famOf(kind==='gb'?'gitbash':kind==='mac'?'mac':'ubuntu'));
+  const shell=kind==='gb'?'bash':S.shell;
+  const rcf=shell==='fish'?'$HOME/.config/fish/config.fish':shell==='zsh'?'$HOME/.zshrc':'$HOME/.bashrc';
+  let h=R`#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────
+#  devbox bootstrap · generated ${today}
+#  target : ${target}
+#  profile: ${S.role||'custom'} · ${sel.list.length} tools · shell ${shell}
+#  theme  : ${THEME_NAME()}${applyOn()?'':' (page only)'}
+#  safe to re-run: every step skips what is already there
+# ─────────────────────────────────────────────────────────
+set -uo pipefail
+
+step() { printf '\n\033[1;36m▸ %s\033[0m\n' "$1"; }
+ok()   { printf '  \033[1;32m✓\033[0m %s\n' "$1"; }
+skip() { printf '  \033[2m· %s already installed\033[0m\n' "$1"; }
+note() { printf '  \033[1;33m!\033[0m %s\n' "$1"; }
+has()  { command -v "$1" >/dev/null 2>&1; }
+
+IN_CONTAINER=0
+if [ -f /.dockerenv ] || [ -n "$(printenv DEVBOX_CONTAINER || true)" ]; then IN_CONTAINER=1; fi
+RC_FILE="${rcf}"
+mkdir -p "$(dirname "$RC_FILE")" "$HOME/.local/bin" "$HOME/.config"; touch "$RC_FILE"
+addrc() { grep -qxF "$1" "$RC_FILE" || echo "$1" >> "$RC_FILE"; }
+managed() { [ ! -f "$1" ] || grep -q '^# devbox-managed' "$1"; }
+export PATH="$HOME/.local/bin:$PATH"
+`;
+  if(kind==='gb') h+=R`
+wg() {
+  if winget.exe list --id "$1" -e --accept-source-agreements >/dev/null 2>&1; then skip "$1"
+  elif winget.exe install --id "$1" -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity >/dev/null 2>&1; then ok "$1"
+  else note "winget could not install $1 - try it by hand"; fi
+}
+refresh_path() {
+  local m u
+  m="$(powershell.exe -NoProfile -Command "[Environment]::GetEnvironmentVariable('Path','Machine')" | tr -d '\r')"
+  u="$(powershell.exe -NoProfile -Command "[Environment]::GetEnvironmentVariable('Path','User')" | tr -d '\r')"
+  export PATH="$HOME/.local/bin:$PATH:$(cygpath -p "$m;$u")"
+}
+if ! has winget.exe; then echo "winget not found - install App Installer from the Microsoft Store, then re-run."; exit 1; fi
+[ -f "$HOME/.bash_profile" ] || echo '[ -f ~/.bashrc ] && . ~/.bashrc' > "$HOME/.bash_profile"
+`;
+  return h;
+}
+function bashCommon(kind){
+  const fam=kind==='gb'?'win':kind==='mac'?'mac':'lin';
+  const shell=kind==='gb'?'bash':S.shell, fish=shell==='fish';
+  const L=[];
+  if(shell==='zsh'&&kind!=='gb') L.push(R`
+step "zsh + oh-my-zsh"
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+  RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" >/dev/null
+  grep -q oh-my-zsh.sh "$HOME/.zshrc" || cp "$HOME/.oh-my-zsh/templates/zshrc.zsh-template" "$HOME/.zshrc"
+fi
+ZC="$HOME/.oh-my-zsh/custom/plugins"
+[ -d "$ZC/zsh-autosuggestions" ] || git clone -q --depth 1 https://github.com/zsh-users/zsh-autosuggestions "$ZC/zsh-autosuggestions"
+[ -d "$ZC/zsh-syntax-highlighting" ] || git clone -q --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting "$ZC/zsh-syntax-highlighting"
+sed -i.bak -e 's/^plugins=(git)$/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' -e 's/^ZSH_THEME=.*/ZSH_THEME=""/' "$HOME/.zshrc"
+ok "oh-my-zsh + autosuggestions + syntax highlighting"`);
+  if(kind!=='gb') L.push(R`
+step "starship prompt"
+if has starship; then skip starship; else curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" >/dev/null; ok starship; fi`);
+  if(kind!=='gb'&&shell!=='bash') L.push(R`
+if [ "$IN_CONTAINER" = 0 ] && [ "$(basename "$(printenv SHELL || echo sh)")" != ${shell} ]; then
+  ${kind==='mac'?`grep -qx "$(command -v ${shell})" /etc/shells || command -v ${shell} | sudo tee -a /etc/shells >/dev/null
+  `:''}chsh -s "$(command -v ${shell})" || note "run: chsh -s $(command -v ${shell})"
+fi`);
+  // git
+  const g=[`git config --global user.name "${S.name||'Your Name'}"`];
+  if(S.email) g.push(`git config --global user.email "${S.email}"`);
+  g.push('git config --global init.defaultBranch main','git config --global pull.rebase true','git config --global push.autoSetupRemote true','git config --global rerere.enabled true');
+  if(kind==='gb') g.push('git config --global core.autocrlf true');
+  g.push(...gitLines('sh'));
+  L.push('\nstep "Git identity"\n'+g.join('\n')+'\nok "git configured"');
+  if(S.signing!=='off') L.push(R`
+step "Commit signing (SSH)"
+if [ "$IN_CONTAINER" = 1 ]; then
+  note "inside a container: not baking a private key into the image - mount ~/.ssh instead"
+else
+  mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+  ${S.signing==='new'?`[ -f "$HOME/.ssh/id_ed25519" ] || ssh-keygen -q -t ed25519 -C "${S.email||S.name||'devbox'}" -f "$HOME/.ssh/id_ed25519" -N ""`:`[ -f "$HOME/.ssh/id_ed25519.pub" ] || note "no ~/.ssh/id_ed25519.pub found - copy your key in, then re-run"`}
+  git config --global gpg.format ssh
+  git config --global user.signingkey "$HOME/.ssh/id_ed25519.pub"
+  git config --global commit.gpgsign true
+  git config --global tag.gpgsign true
+  ok "commits + tags signed with ~/.ssh/id_ed25519"
+fi`);
+  if(S.dotfiles){ let u=S.dotfiles; if(!/^(https?:|git@)/.test(u)) u='https://'+u.replace(/^\/+/,'');
+    L.push(R`
+step "Dotfiles"
+[ -d "$HOME/.dotfiles" ] || git clone -q "${u}" "$HOME/.dotfiles"
+for f in install.sh bootstrap.sh setup.sh; do
+  if [ -x "$HOME/.dotfiles/$f" ]; then "$HOME/.dotfiles/$f"; ok "ran $f"; break; fi
+done`); }
+  L.push(`
+step "Workspace + aliases"
+mkdir -p "$HOME/code/work" "$HOME/code/personal" "$HOME/code/sandbox"
+cat > "$HOME/.devbox_aliases" <<'ALIASES'
+${aliasesSh()}
+ALIASES
+ok "workspace folders in ~/code and an aliases file"`);
+  if(applyOn()){
+    const dirs=[];
+    const base=kind==='mac'?'$HOME/Library/Application Support':kind==='gb'?'$(cygpath "$APPDATA")':'$HOME/.config';
+    if(has('vscode'))dirs.push(base+'/Code/User'); if(has('cursor')&&recipe(BY.cursor,fam))dirs.push(base+'/Cursor/User'); if(has('windsurf')&&recipe(BY.windsurf,fam))dirs.push(base+'/Windsurf/User');
+    let th=`
+step "${THEME_NAME()} theme"
+if managed "$HOME/.config/starship.toml"; then
+cat > "$HOME/.config/starship.toml" <<'STARSHIP'
+${STARSHIP(false)}
+STARSHIP
+ok "starship.toml with the ${THEME_NAME()} palette"
+else note "starship.toml has your own edits - left it alone"; fi`;
+    if(dirs.length) th+=R`
+if [ "$IN_CONTAINER" = 0 ] && ! grep -qi microsoft /proc/version 2>/dev/null; then
+  for d in ${dirs.map(d=>'"'+d+'"').join(' ')}; do
+    if [ -f "$d/settings.json" ]; then note "$d/settings.json exists - left it alone (theme block is in the theme pack tab)"
+    else mkdir -p "$d" && cat > "$d/settings.json" <<'VSSET'
+${VS_SET()}
+VSSET
+    ok "theme + Nerd Font in $(basename "$(dirname "$d")")"; fi
+  done
+fi`;
+    if(has('ghostty')&&kind!=='gb') th+=R`
+mkdir -p "$HOME/.config/ghostty/themes"
+cat > "$HOME/.config/ghostty/themes/devbox" <<'GHOSTTY'
+${ghosttyTheme()}
+GHOSTTY
+touch "$HOME/.config/ghostty/config"
+grep -q '^theme' "$HOME/.config/ghostty/config" || printf 'theme = devbox\nfont-family = JetBrainsMono Nerd Font\n' >> "$HOME/.config/ghostty/config"
+ok "Ghostty theme"`;
+    if(kind==='gb') th+=R`
+WT_FRAG="$(cygpath "$LOCALAPPDATA")/Microsoft/Windows Terminal/Fragments/devbox"
+mkdir -p "$WT_FRAG"
+cat > "$WT_FRAG/devbox.json" <<'WTFRAG'
+${JSON.stringify({schemes:[wtScheme()]},null,2)}
+WTFRAG
+ok "Windows Terminal scheme 'devbox ${THEME_NAME()}' - pick it in Settings > Defaults > Appearance"`;
+    L.push(th);
+  }
+  if(has('vscode')||has('cursor')||has('windsurf')){
+    L.push(R`
+step "Editor extensions"
+${kind==='mac'?'export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin:/Applications/Cursor.app/Contents/Resources/app/bin"\n':''}for cli in code cursor windsurf; do
+  if has "$cli" && [ "$IN_CONTAINER" = 0 ]; then
+    for ext in ${vsExt(fam).join(' ')}; do "$cli" --install-extension "$ext" --force >/dev/null 2>&1 || true; done
+    ok "extensions in $cli"
+  fi
+done`);
+  }
+  const rc=[], sel=selection(fam);
+  const inits=sel.list.map(it=>it.init&&it.init[shell]).filter(Boolean);
+  if(fish){ rc.push('fish_add_path $HOME/.local/bin'); if(sel.ids.has('node')) rc.push(kind==='mac'?'fnm env --use-on-cd | source':'fish_add_path $HOME/.local/share/fnm','fnm env --use-on-cd | source'); rc.push('test -f $HOME/.devbox_aliases; and source $HOME/.devbox_aliases',...inits,'starship init fish | source'); }
+  else {
+    rc.push('export PATH="$HOME/.local/bin:$PATH"');
+    if(sel.ids.has('node')){ if(kind==='lin')rc.push('export PATH="$HOME/.local/share/fnm:$PATH"'); rc.push(kind==='gb'?'eval "$(fnm env --use-on-cd --shell bash)"':'eval "$(fnm env --use-on-cd)"'); }
+    rc.push('[ -f "$HOME/.devbox_aliases" ] && . "$HOME/.devbox_aliases"',...inits,'eval "$(starship init '+shell+')"');
+  }
+  L.push('\nstep "Shell config ('+shell+')"\n'+[...new Set(rc)].map(x=>"addrc '"+x+"'").join('\n')+'\nok "$RC_FILE updated"');
+  if(has('atuin')&&shell==='bash'&&kind!=='gb') L.push('note "atuin needs bash-preexec on bash - see docs.atuin.sh (it works out of the box on zsh and fish)"');
+  const nx=nextSteps(fam);
+  L.push(R`
+printf '\n\033[1;32m  devbox ready.\033[0m Open a new terminal (or: exec ${shell})\n'
+${nx.length?"printf '  Next, sign in:\\n'\n"+nx.map(x=>"printf '    %s\\n' '"+x.replace(/'/g,"'\\''")+"'").join('\n'):''}
+`);
+  return L.join('\n');
+}
+function uvNpm(sel, fam, kind){
+  const L=[];
+  const uvs=sel.list.filter(x=>x.uv && !(fam==='mac'&&x.brewOnly) && !(fam==='win'&&x.wg&&!x.win&&x.id!=='python')).flatMap(x=>x.uv.map(uvArg));
+  if(uvs.length){
+    L.push('\nstep "Python tools via uv"');
+    if(kind==='ps') { L.push(...uvs.map(u=>`uv tool install ${u} | Out-Null; Ok '${u.split(' ')[0]}'`)); L.push('uv tool update-shell | Out-Null'); }
+    else { L.push(...uvs.map(u=>`uv tool install ${u} >/dev/null 2>&1 && ok "${u.split(' ')[0]}" || note "uv could not install ${u.split(' ')[0]}"`)); if(kind==='gb')L.push('uv tool update-shell >/dev/null 2>&1 || true'); }
+  }
+  const npms=sel.list.flatMap(x=>x.npm||[]);
+  if(npms.length){
+    L.push('\nstep "npm globals"');
+    if(kind==='ps') L.push(`if (Has npm) { npm install -g ${npms.join(' ')} --no-fund --no-audit | Out-Null; Ok '${npms.join(', ')}' } else { Note 'npm not found - open a new terminal and re-run' }`);
+    else L.push(`if has npm; then npm install -g ${npms.join(' ')} --no-fund --no-audit >/dev/null && ok "${npms.join(', ')}"; else note "npm not found - open a new terminal and re-run"; fi`);
+  }
+  return L.join('\n');
+}
+function linux(target, skip=new Set()){
+  const sel=selection('lin'); sel.list=sel.list.filter(x=>!skip.has(x.id));
+  const L=[bashHeader(target,'lin')];
+  L.push(R`if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; else SUDO=""; fi
+ARCH="$(dpkg --print-architecture)"   # amd64 | arm64
+UARCH="$(uname -m)"                   # x86_64 | aarch64
+CODENAME="$(. /etc/os-release && echo "$VERSION_CODENAME")"
+IS_WSL=0; if grep -qi microsoft /proc/version 2>/dev/null; then IS_WSL=1; fi
+export DEBIAN_FRONTEND=noninteractive`);
+  const pk=['curl','wget','git','unzip','zip','zstd','ca-certificates','gnupg','build-essential','openssh-client','software-properties-common','less'];
+  if(S.shell!=='bash')pk.push(S.shell);
+  if(sel.ids.has('dotnet'))pk.push('libicu-dev');
+  sel.list.forEach(x=>x.apt&&pk.push(x.apt));
+  L.push(`
+step "Base packages"
+$SUDO apt-get update -qq
+$SUDO apt-get install -y -qq ${pk.join(' ')}
+$SUDO install -d -m 755 /etc/apt/keyrings`+R`
+if has batcat && ! has bat; then ln -sf "$(command -v batcat)" "$HOME/.local/bin/bat"; fi
+if has fdfind && ! has fd; then ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"; fi
+ok "apt packages"`);
+  if(sel.needUv&&!sel.ids.has('python')&&!skip.has('uv')) L.push('\nstep "uv"\n'+UV_LIN);
+  for(const it of sel.list){
+    if(it.lin) L.push('\nstep "'+it.l+'"\n'+it.lin);
+    if(it.linNote) L.push(`if [ "$IS_WSL" = 1 ]; then note "${it.linNote}"; fi`);
+  }
+  L.push(uvNpm(sel,'lin','sh'));
+  L.push(bashCommon('lin'));
+  return L.join('\n');
+}
+function mac(){
+  const sel=selection('mac');
+  const L=[bashHeader('macOS (Apple silicon or Intel)','mac')];
+  const f=['git','curl','wget'], ck=[];
+  if(S.shell==='fish')f.push('fish'); f.push('starship');
+  if(sel.needUv&&!f.includes('uv'))f.push('uv');
+  for(const it of sel.list){ if(it.brew)f.push(it.brew); if(it.brewOnly)f.push(it.brewOnly); if(it.cask)ck.push('brew install --cask '+it.cask); }
+  if(applyOn())ck.push('brew install --cask font-jetbrains-mono-nerd-font');
+  const brewRc=S.shell==='fish'?'addrc "$BREW_BIN shellenv | source"':'addrc "eval \\"\\$($BREW_BIN shellenv)\\""';
+  L.push(R`
+step "Homebrew"
+if ! has brew; then NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi
+if [ -x /opt/homebrew/bin/brew ]; then BREW_BIN=/opt/homebrew/bin/brew; else BREW_BIN=/usr/local/bin/brew; fi
+eval "$("$BREW_BIN" shellenv)"
+${brewRc}
+
+step "Formulae"
+brew install ${[...new Set(f)].join(' ')}
+ok "${new Set(f).size} formulae"`);
+  if(ck.length) L.push('\nstep "Apps & fonts"\n'+ck.join('\n')+'\nok "casks"');
+  for(const it of sel.list) if(it.mac) L.push('\nstep "'+it.l+'"\n'+it.mac);
+  L.push(uvNpm(sel,'mac','sh'));
+  L.push(bashCommon('mac'));
+  return L.join('\n');
+}
+function gitbash(){
+  const sel=selection('win');
+  const L=[bashHeader('Windows · Git Bash (winget under the hood)','gb')];
+  const ids=['Starship.Starship']; if(applyOn())ids.push('DEVCOM.JetBrainsMonoNerdFont');
+  if(sel.needUv&&!sel.ids.has('python'))ids.push('astral-sh.uv');
+  for(const it of sel.list) if(it.wg) ids.push(it.wg);
+  L.push('\nstep "winget packages ('+ids.length+')"\n'+ids.map(i=>'wg '+i).join('\n')+'\nrefresh_path');
+  for(const it of sel.list){ if(it.gb) L.push('\nstep "'+it.l+'"\n'+it.gb); if(it.winNote) L.push('note "'+it.winNote+'"'); }
+  if(S.wsl==='yes') L.push(R`
+step "WSL (Ubuntu)"
+if wsl.exe -l -q 2>/dev/null | tr -d '\0' | grep -qi ubuntu; then skip "WSL Ubuntu"
+else note "WSL needs admin: run  wsl --install -d Ubuntu  in an admin PowerShell, reboot, then run wsl-setup.sh inside Ubuntu"; fi`);
+  L.push(uvNpm(sel,'win','gb'));
+  L.push(bashCommon('gb'));
+  return L.join('\n');
+}
+
+/* ================= PowerShell ================= */
+function ps(){
+  const sel=selection('win');
+  const q=s=>"'"+String(s).replace(/'/g,"''")+"'";
+  const L=[`#Requires -Version 5.1
+# -----------------------------------------------------------
+#  devbox bootstrap - generated ${today}
+#  target : Windows (PowerShell + winget)
+#  profile: ${S.role||'custom'} - ${sel.list.length} tools
+#  theme  : ${THEME_NAME()}${applyOn()?'':' (page only)'}
+#  run    : Set-ExecutionPolicy -Scope Process Bypass -Force; .\\setup.ps1
+#  safe to re-run: every step skips what is already there
+# -----------------------------------------------------------
+$ErrorActionPreference = 'Continue'
+$ProgressPreference = 'SilentlyContinue'
+function Step($t) { Write-Host ''; Write-Host "> $t" -ForegroundColor Cyan }
+function Ok($t)   { Write-Host "  + $t" -ForegroundColor Green }
+function Skip($t) { Write-Host "  - $t already installed" -ForegroundColor DarkGray }
+function Note($t) { Write-Host "  ! $t" -ForegroundColor Yellow }
+function Has($c)  { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
+function Managed($f) { (-not (Test-Path $f)) -or [bool](Select-String -Path $f -Pattern '^# devbox-managed' -Quiet) }
+function Refresh-Path {
+  $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User') + ";$HOME\\.local\\bin"
+}
+function Add-UserPath($dir) {
+  $up = [Environment]::GetEnvironmentVariable('Path','User')
+  if ($up -notlike "*$dir*") { [Environment]::SetEnvironmentVariable('Path', "$up;$dir", 'User') }
+  Refresh-Path
+}
+function Wg($id) {
+  winget list --id $id -e --accept-source-agreements *> $null
+  if ($LASTEXITCODE -eq 0) { Skip $id; return }
+  winget install --id $id -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity *> $null
+  if ($LASTEXITCODE -eq 0) { Ok $id } else { Note "winget could not install $id (exit $LASTEXITCODE) - try it by hand" }
+}
+if (-not (Has winget)) { Write-Host 'winget not found - install App Installer from the Microsoft Store, then re-run.' -ForegroundColor Red; exit 1 }
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force -ErrorAction SilentlyContinue
+$Docs = [Environment]::GetFolderPath('MyDocuments')
+New-Item -ItemType Directory -Force -Path "$HOME\\.local\\bin", "$HOME\\.config" | Out-Null`];
+  const ids=['Git.Git','Starship.Starship']; if(applyOn())ids.push('DEVCOM.JetBrainsMonoNerdFont');
+  if(sel.needUv&&!sel.ids.has('python'))ids.push('astral-sh.uv');
+  for(const it of sel.list) if(it.wg) ids.push(it.wg);
+  L.push('\nStep \'winget packages ('+ids.length+')\'\n'+[...new Set(ids)].map(i=>'Wg '+q(i)).join('\n')+'\nRefresh-Path');
+  for(const it of sel.list){ if(it.win) L.push('\nStep '+q(it.l)+'\n'+it.win); if(it.winNote) L.push('Note '+q(it.winNote)); }
+  if(S.wsl==='yes') L.push(`
+Step 'WSL (Ubuntu)'
+$admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$distros = ((wsl.exe -l -q 2>$null) -join ' ') -replace '\\x00',''
+if ($distros -match 'Ubuntu') { Skip 'WSL Ubuntu' }
+elseif ($admin) { wsl.exe --install -d Ubuntu --no-launch; Ok 'WSL Ubuntu installed - reboot if asked, open Ubuntu once, then run wsl-setup.sh inside it' }
+else { Note 'WSL needs an admin terminal: wsl --install -d Ubuntu  (then run wsl-setup.sh inside Ubuntu)' }`);
+  L.push(uvNpm(sel,'win','ps'));
+  // git
+  const g=['git config --global user.name '+q(S.name||'Your Name')];
+  if(S.email)g.push('git config --global user.email '+q(S.email));
+  g.push('git config --global init.defaultBranch main','git config --global pull.rebase true','git config --global push.autoSetupRemote true','git config --global rerere.enabled true','git config --global core.autocrlf true');
+  g.push(...gitLines('ps'));
+  L.push("\nStep 'Git identity'\n"+g.join('\n')+"\nOk 'git configured'");
+  if(S.signing!=='off') L.push(`
+Step 'Commit signing (SSH)'
+New-Item -ItemType Directory -Force -Path "$HOME\\.ssh" | Out-Null
+`+(S.signing==='new'?`if (-not (Test-Path "$HOME\\.ssh\\id_ed25519")) {
+  $PSNativeCommandArgumentPassing = 'Legacy'
+  ssh-keygen -q -t ed25519 -C ${q(S.email||S.name||'devbox')} -f "$HOME\\.ssh\\id_ed25519" -N '""'
+}`:`if (-not (Test-Path "$HOME\\.ssh\\id_ed25519.pub")) { Note 'no ~/.ssh/id_ed25519.pub found - copy your key in, then re-run' }`)+`
+git config --global gpg.format ssh
+git config --global user.signingkey "$HOME/.ssh/id_ed25519.pub"
+git config --global commit.gpgsign true
+git config --global tag.gpgsign true
+Ok 'commits + tags signed with ~/.ssh/id_ed25519'`);
+  if(S.dotfiles){ let u=S.dotfiles; if(!/^(https?:|git@)/.test(u)) u='https://'+u.replace(/^\/+/,'');
+    L.push(`
+Step 'Dotfiles'
+if (-not (Test-Path "$HOME\\.dotfiles")) { git clone -q ${q(u)} "$HOME\\.dotfiles" }
+foreach ($f in 'install.ps1','setup.ps1','bootstrap.ps1') { $p = Join-Path "$HOME\\.dotfiles" $f; if (Test-Path $p) { & $p; Ok "ran $f"; break } }`); }
+  // aliases + profile
+  const A=['function gs { git status -sb }','Remove-Item Alias:gl -Force -ErrorAction SilentlyContinue','function gl { git log --oneline --graph -20 }'];
+  A.push(has('eza')?'function ll { eza -la --git --group-directories-first --icons @args }':'function ll { Get-ChildItem -Force @args }');
+  if(has('kubectl'))A.push('Set-Alias k kubectl'); if(has('terraform'))A.push('Set-Alias tf terraform');
+  if(has('docker'))A.push('function dc { docker compose @args }'); if(has('lazydocker'))A.push('Set-Alias lzd lazydocker');
+  if(has('lazygit'))A.push('Set-Alias lg lazygit'); if(has('python'))A.push('function py { uv run python @args }');
+  if(has('yazi'))A.push('Set-Alias y yazi'); if(has('just'))A.push('Set-Alias j just'); if(has('claude'))A.push('Set-Alias cc claude');
+  if(has('gcp'))A.push('function gcp-proj { gcloud config get-value project }'); if(has('aws'))A.push('function aws-who { aws sts get-caller-identity }');
+  A.push('try { Set-PSReadLineOption -PredictionSource History -PredictionViewStyle ListView -ErrorAction Stop } catch {}');
+  const P=[];
+  if(sel.ids.has('node'))P.push("if (Get-Command fnm -ErrorAction SilentlyContinue) { fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression }");
+  P.push('if (Test-Path "$HOME\\.devbox_aliases.ps1") { . "$HOME\\.devbox_aliases.ps1" }');
+  for(const it of sel.list) if(it.init&&it.init.ps){ P.push('if (Get-Command '+it.id+' -ErrorAction SilentlyContinue) { '+it.init.ps+' }'); }
+  P.push("if (Get-Command starship -ErrorAction SilentlyContinue) { Invoke-Expression (&starship init powershell) }");
+  L.push(`
+Step 'Workspace, aliases + PowerShell profile'
+New-Item -ItemType Directory -Force -Path "$HOME\\code\\work","$HOME\\code\\personal","$HOME\\code\\sandbox" | Out-Null
+Set-Content -Path "$HOME\\.devbox_aliases.ps1" -Encoding utf8 -Value @'
+${A.join('\n')}
+'@
+$ProfileLines = @(
+${P.map(q).map(x=>'  '+x).join(',\n')}
+)
+foreach ($p in @("$Docs\\PowerShell\\Microsoft.PowerShell_profile.ps1", "$Docs\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1")) {
+  New-Item -ItemType Directory -Force -Path (Split-Path $p) | Out-Null
+  if (-not (Test-Path $p)) { New-Item -ItemType File -Path $p | Out-Null }
+  $cur = [string](Get-Content $p -Raw)
+  foreach ($l in $ProfileLines) { if (-not $cur.Contains($l)) { Add-Content -Path $p -Value $l } }
+}
+Ok 'profile for PowerShell 7 and Windows PowerShell'`);
+  if(applyOn()){
+    const apps=[]; if(has('vscode'))apps.push("'Code'"); if(has('cursor'))apps.push("'Cursor'"); if(has('windsurf'))apps.push("'Windsurf'");
+    L.push(`
+Step '${THEME_NAME()} theme'
+if (Managed "$HOME\\.config\\starship.toml") {
+  Set-Content -Path "$HOME\\.config\\starship.toml" -Encoding utf8 -Value @'
+${STARSHIP(true)}
+'@
+  Ok 'starship.toml with the ${THEME_NAME()} palette'
+} else { Note 'starship.toml has your own edits - left it alone' }
+$WtFrag = "$env:LOCALAPPDATA\\Microsoft\\Windows Terminal\\Fragments\\devbox"
+New-Item -ItemType Directory -Force -Path $WtFrag | Out-Null
+Set-Content -Path "$WtFrag\\devbox.json" -Encoding utf8 -Value @'
+${JSON.stringify({schemes:[wtScheme()]},null,2)}
+'@
+Ok 'Windows Terminal scheme "devbox ${THEME_NAME()}"'`+(apps.length?`
+$VsSettings = @'
+${VS_SET()}
+'@
+foreach ($app in ${apps.join(',')}) {
+  $f = "$env:APPDATA\\$app\\User\\settings.json"
+  if (Test-Path $f) { Note "$app settings.json exists - left it alone (theme block is in the theme pack tab)" }
+  else { New-Item -ItemType Directory -Force -Path (Split-Path $f) | Out-Null; Set-Content -Path $f -Value $VsSettings -Encoding utf8; Ok "$app theme + Nerd Font" }
+}`:'')+`
+Note 'Windows Terminal: Settings > Defaults > Appearance > colour scheme "devbox ${THEME_NAME()}", font "JetBrainsMono Nerd Font"'`);
+  }
+  if(has('vscode')||has('cursor')||has('windsurf')) L.push(`
+Step 'Editor extensions'
+$Exts = @(${vsExt('win').map(q).join(', ')})
+foreach ($cli in 'code','cursor','windsurf') {
+  if (Has $cli) { foreach ($e in $Exts) { & $cli --install-extension $e --force *> $null }; Ok "extensions in $cli" }
+}`);
+  const nx=nextSteps('win');
+  L.push(`
+Write-Host ''
+Write-Host '  devbox ready. Open a new Windows Terminal tab.' -ForegroundColor Green`+(nx.length?`
+Write-Host '  Next, sign in:'
+${nx.map(x=>'Write-Host '+q('    '+x)).join('\n')}`:''));
+  return L.join('\n')+'\n';
+}
+
+/* ================= container exports ================= */
+function dockerfile(){
+  const sh=S.shell==='bash'?'bash':S.shell;
+  return `# syntax=docker/dockerfile:1.7
+# devbox image · generated ${today}
+# build: docker build -t devbox .
+# run:   docker run -it --rm -v "$PWD":/home/dev/code/work devbox
+FROM ubuntu:24.04
+ARG USERNAME=dev
+ENV DEBIAN_FRONTEND=noninteractive TZ=Asia/Kolkata LANG=en_US.UTF-8
+
+RUN apt-get update && apt-get install -y --no-install-recommends sudo curl ca-certificates tzdata locales \\
+ && locale-gen en_US.UTF-8 \\
+ && (userdel -r ubuntu 2>/dev/null || true) \\
+ && useradd -m -s /bin/bash "$USERNAME" \\
+ && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/devbox \\
+ && rm -rf /var/lib/apt/lists/*
+
+USER $USERNAME
+WORKDIR /home/$USERNAME
+
+COPY --chown=$USERNAME --chmod=755 <<'SETUP' /tmp/setup.sh
+${linux('Docker image (ubuntu:24.04)')}
+SETUP
+
+RUN DEVBOX_CONTAINER=1 /tmp/setup.sh && sudo rm /tmp/setup.sh
+CMD ["${sh}", "-l"]
+`;
+}
+function devc(){
+  const F={'ghcr.io/devcontainers/features/common-utils:2':{installZsh:S.shell==='zsh',configureZshAsDefaultShell:S.shell==='zsh',installOhMyZsh:false}};
+  const skip=new Set(['vscode','cursor','zed','windsurf','tailscale']);
+  const add=(id,k,v)=>{if(has(id)){F[k]=v;skip.add(id)}};
+  add('node','ghcr.io/devcontainers/features/node:1',{version:'lts'});
+  add('java','ghcr.io/devcontainers/features/java:1',{version:'21'});
+  add('go','ghcr.io/devcontainers/features/go:1',{});
+  add('rust','ghcr.io/devcontainers/features/rust:1',{});
+  add('dotnet','ghcr.io/devcontainers/features/dotnet:2',{});
+  add('aws','ghcr.io/devcontainers/features/aws-cli:1',{});
+  add('azure','ghcr.io/devcontainers/features/azure-cli:1',{});
+  add('gcp','ghcr.io/dhoeric/features/google-cloud-cli:1',{});
+  add('docker','ghcr.io/devcontainers/features/docker-in-docker:2',{});
+  add('terraform','ghcr.io/devcontainers/features/terraform:1',{});
+  add('gh','ghcr.io/devcontainers/features/github-cli:1',{});
+  if(has('kubectl')||has('helm')){F['ghcr.io/devcontainers/features/kubectl-helm-minikube:1']={minikube:'none'};skip.add('kubectl');skip.add('helm')}
+  const j={name:'devbox',image:'mcr.microsoft.com/devcontainers/base:ubuntu-24.04',features:F,
+    containerEnv:{DEVBOX_CONTAINER:'1',TZ:'Asia/Kolkata'},
+    postCreateCommand:'bash .devcontainer/post-create.sh',
+    customizations:{vscode:{extensions:vsExt('lin'),settings:{'terminal.integrated.defaultProfile.linux':S.shell}}}};
+  if(applyOn()) j.customizations.vscode.settings={...j.customizations.vscode.settings,...JSON.parse(VS_SET())};
+  return {json:JSON.stringify(j,null,2)+'\n',post:linux('devcontainer post-create',skip)};
+}
+
+/* ================= syntax highlight ================= */
+const HL = /(#![^\n]*|(?<=^|[\s;({])#[^\n]*|\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'[^'\n]*')|(\$env:[A-Za-z_]\w*|\$\{?[A-Za-z_]\w*\}?|\$\(|\$HOME)|\b(if|then|else|elif|fi|for|foreach|in|do|done|while|function|return|exit|case|esac|try|catch|elseif|FROM|RUN|COPY|ARG|ENV|USER|WORKDIR|CMD|true|false|null)\b|\b(step|ok|skip|note|has|addrc|managed|Step|Ok|Skip|Note|Has|Wg|wg|Managed|refresh_path|Refresh-Path|Add-UserPath)\b|\b(\d+(?:\.\d+)?)\b/gm;
+function hl(src){
+  let out='', last=0;
+  src.replace(HL,(m,c,s,v,k,f,n,off)=>{
+    out+=esc(src.slice(last,off)); last=off+m.length;
+    const cls=c?'hc':s?'hs':v?'hv':k?'hk':f?'hf':'hn';
+    out+='<span class="'+cls+'">'+esc(m)+'</span>'; return m;
+  });
+  out+=esc(src.slice(last));
+  return out.split('\n').map(l=>'<span class="l">'+(l||' ')+'</span>').join('');
+}
+
+/* ================= status line ================= */
+addEventListener('scroll',()=>$('top').classList.toggle('lift',scrollY>8),{passive:true});
+const sayEl=$('say');
+let sayT=null;
+const reduced=()=>{try{return matchMedia('(prefers-reduced-motion:reduce)').matches}catch(e){return false}};
+function hoot(msg){
+  clearInterval(sayT); let i=0; sayEl.textContent='';
+  if(reduced()){sayEl.textContent=msg;}
+  else sayT=setInterval(()=>{sayEl.textContent=msg.slice(0,++i); if(i>=msg.length)clearInterval(sayT);},11);
+  $('fname').textContent=({win:'setup.ps1',gitbash:'setup-gitbash.sh',mac:'setup-mac.sh'})[S.os]||'setup.sh';
+}
+function hootStatus(){
+  const fam=famOf(S.os), n=selection(fam).list.length, miss=skipped(fam).length;
+  const plat=SINGLE.os.o.find(o=>o[0]===S.os)[1];
+  let m=n+' tools queued for '+plat+'.';
+  if(miss) m+=' '+miss+(miss===1?' tool sits':' tools sit')+' this one out'+(fam==='win'&&S.wsl==='yes'?', WSL catches them.':'.');
+  else m+=' Every pick has a recipe here.';
+  return m;
+}
+
+/* ================= output ================= */
+let files=[], active=0;
+function generate(){
+  const fam=famOf(S.os); let warn='';
+  const linuxTarget = S.os==='wsl'?'Ubuntu on WSL':'Ubuntu / Debian (cloud VM, Zorin, etc.)';
+  if(S.out==='script'){
+    if(S.os==='win') files=[{n:'setup.ps1',c:ps(),how:'Save as <code>setup.ps1</code>, open PowerShell (as admin if you want WSL installed) and run <code>Set-ExecutionPolicy -Scope Process Bypass -Force; .\\setup.ps1</code>'}];
+    else if(S.os==='gitbash') files=[{n:'setup-gitbash.sh',c:gitbash(),how:'Save it, open Git Bash and run <code>bash setup-gitbash.sh</code>. winget may pop up a few UAC prompts.'}];
+    else if(S.os==='mac') files=[{n:'setup-mac.sh',c:mac(),how:'Save it and run <code>bash setup-mac.sh</code> in Terminal.'}];
+    else files=[{n:'setup.sh',c:linux(linuxTarget),how:'Save it and run <code>bash setup.sh</code>. It asks for sudo once.'}];
+    if(fam==='win'&&S.wsl==='yes') files.push({n:'wsl-setup.sh',c:linux('Ubuntu on WSL'),how:'After WSL is installed, open Ubuntu and run <code>bash /mnt/c/Users/&lt;you&gt;/Downloads/wsl-setup.sh</code>. This is where Ansible, tmux, kcat and psql live.'});
+  } else if(S.out==='docker'){ files=[{n:'Dockerfile',c:dockerfile(),how:'Put it in an empty folder, run <code>docker build -t devbox .</code> then <code>docker run -it --rm devbox</code>.'}]; }
+  else { const d=devc(); files=[{n:'.devcontainer/devcontainer.json',c:d.json,how:'Drop both files into <code>.devcontainer/</code> in any repo, then “Reopen in Container”.'},{n:'.devcontainer/post-create.sh',c:d.post,how:'Runs once after the container is built; features cover the heavy installs.'}]; }
+  if(applyOn()) files.push({n:'theme-'+T().id+'.txt',c:themePack(),how:'Colour configs for '+esc(T().n)+' in Windows Terminal, Ghostty, WezTerm, Alacritty, kitty and VS Code. Paste the block for the terminal you use.'});
+  if(S.out!=='script'&&fam!=='lin') warn='Containers are always Linux, so this uses the Ubuntu recipe rather than '+FAMNAME[fam]+'. ';
+  const sk=skipped(S.out==='script'?fam:'lin');
+  if(sk.length) warn+='Left out on '+FAMNAME[S.out==='script'?fam:'lin']+': '+sk.map(x=>x.l).join(', ')+(fam==='win'&&S.wsl==='yes'&&S.out==='script'?' (they’re in wsl-setup.sh instead).':'.');
+  if(S.out==='script'&&fam==='win') warn+=' winget IDs change occasionally; anything that fails is reported and the script carries on.';
+  $('warn').textContent=warn.trim();
+  active=Math.min(active,files.length-1); show();
+}
+function show(){
+  $('tabs').innerHTML=files.map((f,i)=>'<button class="tab" role="tab" aria-selected="'+(i===active)+'" data-i="'+i+'">'+esc(f.n)+'</button>').join('');
+  const f=files[active];
+  $('code').innerHTML=hl(f.c);
+  $('meta').textContent=f.c.split('\n').length+' lines · '+(new Blob([f.c]).size/1024).toFixed(1)+' KB';
+  $('how').innerHTML=f.how;
+  $('copy').textContent='Copy';
+}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b){active=+b.dataset.i;show()}});
+async function copyCur(){
+  const btn=$('copy');
+  try{await navigator.clipboard.writeText(files[active].c);btn.textContent='Copied ✓';hoot(files[active].n+' copied to the clipboard.')}
+  catch(e){const r=document.createRange();r.selectNodeContents($('code'));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Selected · press Ctrl+C'}
+}
+$('copy').addEventListener('click',copyCur);
+let framed=true; try{framed=window.top!==window.self}catch(e){}
+$('dl').hidden=framed;
+$('dl').addEventListener('click',()=>{
+  const f=files[active], a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([f.c],{type:'text/plain'})); a.download=f.n.split('/').pop();
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+});
+function runGen(){
+  generate(); mode='GENERATED'; renderStatus();
+  const o=$('out'); o.hidden=false;
+  setTimeout(()=>hoot(files.map(f=>f.n).join(' + ')+' ready, '+files[0].c.split('\n').length+' lines. Copy it and run it.'),0);
+  o.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'});
+}
+$('run').addEventListener('click',runGen);
+function changed(){save();applyTheme();render();if(!$('out').hidden)generate();}
+
+/* ================= command palette ================= */
+const isMac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent);
+$('kKey').textContent=$('kKey2').textContent=isMac?'⌘K':'Ctrl K';
+const pal=$('pal'), palQ=$('palQ'), palList=$('palList');
+let palItems=[], palSel=0;
+function palAll(){
+  const fam=famOf(S.os), out=[];
+  out.push({k:'action',t:'Generate setup',run:()=>{closePal();runGen()}});
+  if(files.length) out.push({k:'action',t:'Copy '+files[active].n,run:()=>{closePal();copyCur()}});
+  out.push({k:'action',t:'Choose theme…',run:()=>{closePal();openSheet('theme')}});
+  out.push({k:'action',t:'Next theme',sub:'cycle through all '+THEMES.length,run:()=>cycleTheme(1),keep:1});
+  for(const o of SINGLE.os.o) out.push({k:'platform',t:o[1],sub:o[2],st:S.os===o[0]?'current':'',run:()=>{S.os=o[0];changed();hoot(hootStatus())},keep:1});
+  for(const r in ROLES) out.push({k:'preset',t:r,st:S.role===r?'current':'',run:()=>{S={...S,...ROLES[r],role:r};changed();hoot(r+' preset loaded. '+hootStatus())},keep:1});
+  for(const t of THEMES) out.push({k:'theme',t:t.n,sub:t.d,dot:t.sw,st:S.theme===t.id?'current':'',run:()=>{S.theme=t.id;changed();hoot('Theme: '+t.n+' · '+t.d+'.')},keep:1});
+  for(const x of I){ const on=(S[x.g]||[]).includes(x.id), na=!recipe(x,fam);
+    out.push({k:'tool',t:x.l,sub:GROUPS[x.g]+(x.d?' · '+x.d:'')+(na?' · not on '+FAMNAME[fam]:''),st:on?'on':'off',run:()=>{S[x.g]=on?S[x.g].filter(i=>i!==x.id):[...S[x.g],x.id];S.role='';changed();hoot((on?'Removed ':'Added ')+x.l+'. '+hootStatus())},keep:1}); }
+  return out;
+}
+function score(it,q){
+  if(!q) return it.k==='tool'?1:2;
+  const s=(it.t+' '+(it.sub||'')+' '+it.k).toLowerCase(), t=it.t.toLowerCase();
+  if(t.startsWith(q)) return 10; if(t.includes(q)) return 7; if(s.includes(q)) return 4;
+  let i=0; for(const ch of s){ if(ch===q[i]) i++; if(i===q.length) return 1; } return 0;
+}
+function palRender(){
+  const q=palQ.value.trim().toLowerCase();
+  palItems=palAll().map(it=>({...it,sc:score(it,q)})).filter(it=>it.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,60);
+  palSel=Math.min(palSel,Math.max(0,palItems.length-1));
+  palList.innerHTML=palItems.map((it,i)=>'<button class="pi" role="option" aria-selected="'+(i===palSel)+'" data-i="'+i+'"><span class="k">'+it.k+'</span><span class="t">'+(it.dot?'<span class="dot" style="background:'+it.dot+';margin-right:8px"></span>':'')+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span>'+(it.st?'<span class="st '+(it.st==='on'||it.st==='current'?'on':'')+'">'+(it.st==='on'?'✓ added':it.st==='off'?'add':'●')+'</span>':'')+'</button>').join('')||'<p class="empty">Nothing matches. Try “rust”, “k8s” or “theme”.</p>';
+  palList.querySelector('[aria-selected=true]')?.scrollIntoView({block:'nearest'});
+}
+function openPal(){ pal.classList.add('on'); palQ.value=''; palSel=0; palRender(); setTimeout(()=>palQ.focus(),20); }
+function closePal(){ pal.classList.remove('on'); }
+function palRun(i){ const it=palItems[i]; if(!it)return; it.run(); if(it.keep&&pal.classList.contains('on')){ palRender(); palQ.focus(); } }
+palQ.addEventListener('input',()=>{palSel=0;palRender()});
+palQ.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){e.preventDefault();palSel=Math.min(palSel+1,palItems.length-1);palRender()}
+  else if(e.key==='ArrowUp'){e.preventDefault();palSel=Math.max(palSel-1,0);palRender()}
+  else if(e.key==='Enter'){e.preventDefault();palRun(palSel)}
+});
+palList.addEventListener('click',e=>{const b=e.target.closest('.pi'); if(b){palSel=+b.dataset.i; palRun(palSel)}});
+pal.addEventListener('click',e=>{if(e.target===pal)closePal()});
+$('kBtn').onclick=openPal;
+
+document.addEventListener('keydown',e=>{
+  const mod=e.metaKey||e.ctrlKey;
+  if(mod&&e.key.toLowerCase()==='k'){e.preventDefault(); pal.classList.contains('on')?closePal():openPal(); return;}
+  if(mod&&e.key==='Enter'){e.preventDefault(); closePal(); runGen(); return;}
+  if(e.key==='Escape'){ if(pal.classList.contains('on')) closePal(); else if(scrim.classList.contains('on')) closeSheet(); return; }
+  const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
+  if(!typing&&!pal.classList.contains('on')&&!scrim.classList.contains('on')){
+    if(e.key==='/'){e.preventDefault();openPal()}
+    else if(e.key===']')cycleTheme(1); else if(e.key==='[')cycleTheme(-1);
+  }
+});
+
+/* ================= follow the system theme ================= */
+const resync=()=>{ if(S.theme==='system'){ applyTheme(); render(); if(!$('out').hidden)generate(); } };
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',resync); }catch(e){}
+new MutationObserver(resync).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+applyTheme();
+render();
+hoot(S.role==='My stack'?'Your stack is pre-loaded. Tap any highlighted word to change it, or press / to search '+I.length+' tools.':hootStatus());
+}
+</script>
+</body>
+</html>
