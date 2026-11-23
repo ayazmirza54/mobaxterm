@@ -27,9 +27,10 @@ What's the first thing you install on a new machine? 👇
 
 ## First comment (post right after publishing)
 
-Try it / source: <paste your GitHub or Pages link here>
+Try it here 👉 https://devbox.ayazmirza54.in
 
 ## Tips
 
-- Attach 2–3 screenshots (the sentence card, the theme gallery, the generated script), or a 15-second screen recording cycling themes with [ and ].
+- Images are in `social/` (1080×1350 at 2x, LinkedIn's portrait size). Upload in this order: `1-sentence.png`, `5-four-themes.png`, `2-themes.png`, `3-script.png`, `4-palette.png`.
+- The link preview card uses `og-image.png` (1200×630). After deploying, paste the URL into linkedin.com/post-inspector to refresh LinkedIn's cache.
 - Put the link in the first comment, not the post body: LinkedIn shows posts with outside links to fewer people.
