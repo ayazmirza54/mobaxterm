@@ -5,6 +5,9 @@ PowerShell (winget), Git Bash, WSL / Ubuntu, or macOS (Homebrew), plus Dockerfil
 
 Open `index.html` in a browser. No build step.
 
+`landing.html` is the product landing page: interactive sentence demo, tool catalogue, re-run demo, output formats
+and a theme picker that re-tints the page. It links to `index.html` for the app itself.
+
 - 108 tools in 13 groups: languages, clouds, infra, data, AI coding agents, deploy CLIs, terminal goodies,
   shell superpowers (zoxide, atuin, mise, direnv, just…), git power-ups, network & security, Android, editors, desktop apps
 - 23 themes: 16 inspired by rune.build (Romero, Carmack, Frost, Wozniak, Brevik, Sanfilippo, Kernighan, Kelleher,
