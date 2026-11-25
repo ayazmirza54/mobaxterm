@@ -5,8 +5,10 @@ PowerShell (winget), Git Bash, WSL / Ubuntu, or macOS (Homebrew), plus Dockerfil
 
 Open `index.html` in a browser. No build step.
 
-`landing.html` is the product landing page: interactive sentence demo, tool catalogue, re-run demo, output formats
-and a theme picker that re-tints the page. It links to `index.html` for the app itself.
+It is one page: a landing frame (hero, tool catalogue, re-run demo, theme gallery, shortcuts, FAQ) with the
+real generator embedded as an editor window in section 01. One theme state drives both: picking a theme in the
+gallery, the window or with `[` `]` restyles the generator and re-tints the page. The generator's CSS is scoped
+under `.app`; the page's tokens are prefixed (`--pg`, `--rule`, `--dim`) so the theme engine only touches the window.
 
 - 108 tools in 13 groups: languages, clouds, infra, data, AI coding agents, deploy CLIs, terminal goodies,
   shell superpowers (zoxide, atuin, mise, direnv, just…), git power-ups, network & security, Android, editors, desktop apps
